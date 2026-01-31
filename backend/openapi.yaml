@@ -12,6 +12,9 @@ servers:
   - url: https://backend-hidden-field-9510.fly.dev/
     description: Prod development server
 
+security:
+  - UserIdHeader: []
+
 paths:
   /prompts:
     post:
@@ -38,20 +41,32 @@ paths:
             text/plain:
               schema:
                 type: string
+        '401':
+          description: Unauthorized - Missing or invalid user ID
+          content:
+            text/plain:
+              schema:
+                type: string
     get:
-      summary: List all prompts
+      summary: List all prompts for the authenticated user
       operationId: listPrompts
       tags:
         - Prompts
       responses:
         '200':
-          description: List of prompts
+          description: List of user's prompts
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/PromptResponse'
+        '401':
+          description: Unauthorized - Missing or invalid user ID
+          content:
+            text/plain:
+              schema:
+                type: string
         '500':
           description: Internal server error
           content:
@@ -79,8 +94,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PromptResponse'
+        '401':
+          description: Unauthorized - Missing or invalid user ID
+          content:
+            text/plain:
+              schema:
+                type: string
         '404':
-          description: Prompt not found
+          description: Prompt not found or not owned by user
           content:
             text/plain:
               schema:
@@ -112,6 +133,18 @@ paths:
             text/plain:
               schema:
                 type: string
+        '401':
+          description: Unauthorized - Missing or invalid user ID
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: Prompt not found or not owned by user
+          content:
+            text/plain:
+              schema:
+                type: string
     delete:
       summary: Delete a prompt
       operationId: deletePrompt
@@ -127,8 +160,14 @@ paths:
       responses:
         '204':
           description: Prompt deleted successfully
+        '401':
+          description: Unauthorized - Missing or invalid user ID
+          content:
+            text/plain:
+              schema:
+                type: string
         '404':
-          description: Prompt not found
+          description: Prompt not found or not owned by user
           content:
             text/plain:
               schema:
@@ -166,6 +205,18 @@ paths:
             text/plain:
               schema:
                 type: string
+        '401':
+          description: Unauthorized - Missing or invalid user ID
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: Prompt not found or not owned by user
+          content:
+            text/plain:
+              schema:
+                type: string
 
   /prompts/{prompt_id}/versions/{version_id}:
     get:
@@ -193,8 +244,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VersionResponse'
+        '401':
+          description: Unauthorized - Missing or invalid user ID
+          content:
+            text/plain:
+              schema:
+                type: string
         '404':
-          description: Version not found
+          description: Version not found or prompt not owned by user
           content:
             text/plain:
               schema:
@@ -220,8 +277,14 @@ paths:
       responses:
         '204':
           description: Version deleted successfully
+        '401':
+          description: Unauthorized - Missing or invalid user ID
+          content:
+            text/plain:
+              schema:
+                type: string
         '404':
-          description: Version not found
+          description: Version not found or prompt not owned by user
           content:
             text/plain:
               schema:
@@ -255,6 +318,18 @@ paths:
             text/plain:
               schema:
                 type: string
+        '401':
+          description: Unauthorized - Missing or invalid user ID
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: Prompt not found or not owned by user
+          content:
+            text/plain:
+              schema:
+                type: string
 
   /prompts/{prompt_id}/tags/{tag_name}:
     delete:
@@ -277,8 +352,14 @@ paths:
       responses:
         '204':
           description: Tag deleted successfully
+        '401':
+          description: Unauthorized - Missing or invalid user ID
+          content:
+            text/plain:
+              schema:
+                type: string
         '404':
-          description: Tag not found
+          description: Tag not found or prompt not owned by user
           content:
             text/plain:
               schema:
@@ -309,8 +390,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VersionResponse'
+        '401':
+          description: Unauthorized - Missing or invalid user ID
+          content:
+            text/plain:
+              schema:
+                type: string
         '404':
-          description: Tag or version not found
+          description: Tag or version not found, or prompt not owned by user
           content:
             text/plain:
               schema:
@@ -344,6 +431,18 @@ paths:
                 $ref: '#/components/schemas/SubmitFeedbackResponse'
         '400':
           description: Bad request
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized - Missing or invalid user ID
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: Prompt not found or not owned by user
           content:
             text/plain:
               schema:
@@ -389,6 +488,18 @@ paths:
             text/plain:
               schema:
                 type: string
+        '401':
+          description: Unauthorized - Missing or invalid user ID
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: Feedback not found or prompt not owned by user
+          content:
+            text/plain:
+              schema:
+                type: string
     delete:
       summary: Delete feedback
       operationId: deleteFeedback
@@ -416,14 +527,27 @@ paths:
       responses:
         '204':
           description: Feedback deleted successfully
+        '401':
+          description: Unauthorized - Missing or invalid user ID
+          content:
+            text/plain:
+              schema:
+                type: string
         '404':
-          description: Feedback not found
+          description: Feedback not found or prompt not owned by user
           content:
             text/plain:
               schema:
                 type: string
 
 components:
+  securitySchemes:
+    UserIdHeader:
+      type: apiKey
+      in: header
+      name: x-user-id
+      description: User ID for authentication (temporary until proper auth is implemented)
+
   schemas:
     PromptResponse:
       type: object
@@ -432,6 +556,10 @@ components:
           type: string
           format: uuid
           example: "550e8400-e29b-41d4-a716-446655440000"
+        user_id:
+          type: string
+          example: "user-123"
+          description: "Owner of the prompt"
         name:
           type: string
           example: "My First Prompt"
