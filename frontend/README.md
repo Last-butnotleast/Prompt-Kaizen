@@ -55,6 +55,47 @@ Teams struggle to maintain prompt quality over time. Changes are ad-hoc, there's
 - Tags point to specific versions
 - Feedback linked to versions
 
+### Component Split
+
+- **Manager Components**: Handle data fetching, mutations, business logic. Connect to TanStack Query hooks.
+- **Display Components**: Pure presentation. Receive props, render UI, emit events.
+
+### State Management
+
+**Server State** (TanStack Query):
+
+- All domain data (actors, work objects, features)
+- Automatic caching, refetching, and invalidation
+- Optimistic updates for better UX
+- Loading and error states handled per query
+
+**Navigation State** (TanStack Router):
+
+- URL-driven navigation
+- Type-safe routing with params
+- Active state detection from URL
+- No client-side state needed for navigation
+
+### Data Flow
+
+```
+Component
+  ↓
+Manager Component
+  ├── useQuery (read data) → TanStack Query → Backend API
+  ├── useMutation (write data) → TanStack Query → Backend API
+  └── useNavigate → TanStack Router → URL state
+  ↓
+Display Component (props only)
+```
+
+### Code Style
+
+- No code comments (self-documenting code)
+- Clean, minimal structure
+- Clear separation: API → Queries/Mutations → Manager → Display
+- Async operations handled by TanStack Query
+
 ### API Layer
 
 - **OpenAPI Spec** - Single source of truth for API contracts
