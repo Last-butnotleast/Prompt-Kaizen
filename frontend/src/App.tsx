@@ -36,27 +36,6 @@ export default function App() {
     if (error) console.error("Error signing out:", error.message);
   };
 
-  const testBackend = async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const token = session?.access_token;
-
-    try {
-      const response = await fetch("http://localhost:8000/api/protected", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      console.log("Backend response:", data);
-      alert(JSON.stringify(data, null, 2));
-    } catch (error) {
-      console.error("Backend error:", error);
-      alert("Error calling backend");
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -83,13 +62,6 @@ export default function App() {
               <p className="text-lg font-semibold">Welcome!</p>
               <p className="text-sm text-gray-600">{user.email}</p>
             </div>
-
-            <button
-              onClick={testBackend}
-              className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-            >
-              Test Backend API
-            </button>
 
             <button
               onClick={signOut}
