@@ -1,4 +1,5 @@
 import { Home, Sparkles, MessageSquare } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import type { User } from "@supabase/supabase-js";
 import supabase from "@/lib/supabase";
 import {
@@ -37,15 +38,19 @@ export function AppSidebar({ user }: AppSidebarProps) {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Home className="h-4 w-4" />
-                  <span>Dashboard</span>
+                <SidebarMenuButton asChild>
+                  <Link to="/dashboard">
+                    <Home className="h-4 w-4" />
+                    <span>Dashboard</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Sparkles className="h-4 w-4" />
-                  <span>Prompts</span>
+                <SidebarMenuButton asChild>
+                  <Link to="/prompts">
+                    <Sparkles className="h-4 w-4" />
+                    <span>Prompts</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
