@@ -3,6 +3,7 @@ use axum::{
     Router,
 };
 use std::sync::Arc;
+use http::Method;
 use tower_http::cors::{CorsLayer, Any};
 
 use super::handlers::{
@@ -14,26 +15,25 @@ use super::handlers::{
 };
 
 pub fn create_router(state: Arc<AppState>) -> Router {
+    let allowed_origin = std::env::var("ALLOWED_ORIGIN")
+        .unwrap_or_else(|_| "http://localhost:5173".to_string());
+
     let cors = CorsLayer::new()
-        .allow_origin("http://localhost:5173".parse::<axum::http::HeaderValue>().unwrap())
-        .allow_methods(Any)
+        .allow_origin(allowed_origin.parse::<axum::http::HeaderValue>().unwrap())
+        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
         .allow_headers(Any);
 
     Router::new()
         .route("/prompts", post(create_prompt).get(list_prompts))
         .route("/prompts/{prompt_id}", get(get_prompt).put(update_prompt).delete(delete_prompt))
-
         .route("/prompts/{prompt_id}/versions", post(create_version))
         .route("/prompts/{prompt_id}/versions/{version_id}", get(get_version).delete(delete_version))
-
         .route("/prompts/{prompt_id}/tags", post(tag_version))
         .route("/prompts/{prompt_id}/tags/{tag_name}", delete(delete_tag))
         .route("/prompts/{prompt_id}/tags/{tag_name}/version", get(get_version_by_tag))
-
         .route("/prompts/{prompt_id}/feedback", post(submit_feedback))
         .route("/prompts/{prompt_id}/versions/{version_id}/feedback/{feedback_id}",
                put(update_feedback).delete(delete_feedback))
-
         .layer(cors)
         .with_state(state)
 }
