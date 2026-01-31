@@ -1,73 +1,120 @@
-# React + TypeScript + Vite
+# Prompt Kaizen
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Continuous Improvement Platform for AI Prompts**
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Prompt Kaizen applies continuous improvement methodology to prompt engineering. Version, test, and systematically improve your AI prompts based on real user feedback and AI-driven insights.
 
-## React Compiler
+## The Problem
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Teams struggle to maintain prompt quality over time. Changes are ad-hoc, there's no visibility into what works, and improvements rely on guesswork rather than data.
 
-## Expanding the ESLint configuration
+## Core Features
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 1. **Prompt Version Control**
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- Docker-style versioning (e.g., `0.0.1`, `0.1.2`)
+- Tag support (e.g., `latest`, `production`, `experimental`)
+- Unique digest generated for each version
+- Full version history with changelog
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### 2. **Feedback Collection**
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Capture user ratings (1-5) on AI responses
+- Link feedback directly to prompt versions and digests
+- Optional qualitative comments
+- Aggregate feedback per version
+
+### 3. **AI-Powered Improvement Engine**
+
+- Analyze aggregated feedback patterns
+- Generate data-driven improvement suggestions
+- Explain reasoning behind each recommendation
+
+### 4. **Decision Records**
+
+- Document why each version was created
+- Track rationale for changes
+- Reference feedback that triggered improvements
+
+## Integration Methods
+
+- **REST API** - Programmatic access to prompts and feedback submission
+- **MCP (Model Context Protocol)** - Direct integration with AI systems
+- **n8n** - Workflow automation and feedback pipelines
+
+## Architecture
+
+### Domain Model
+
+**Prompt** (Aggregate Root)
+
+- Manages versions, tags, and feedback
+- Versions have unique digests (SHA256 of content)
+- Tags point to specific versions
+- Feedback linked to versions
+
+### API Layer
+
+- **OpenAPI Spec** - Single source of truth for API contracts
+- **Type Generation** - Auto-generated TypeScript types via `openapi-typescript`
+- **Type-Safe Client** - `openapi-fetch` + `openapi-react-query` for fully typed React hooks
+- **API Hooks** - Custom hooks per domain (prompts, versions, tags, feedback)
+
+### File Structure
+
+```
+api/
+  generated/
+    schema.d.ts          # Auto-generated from OpenAPI spec
+  hooks/                 # React Query hooks per domain
+    prompts.ts
+    versions.ts
+    tags.ts
+    feedback.ts
+  client.ts              # Configured openapi-fetch client
+components/
+  layout/
+  pages/
+  sidebar/
+routes/                  # TanStack Router file-based routes
+types/
+  index.ts               # App-specific types
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### State & Navigation
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+**Server State** (React Query):
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- All domain data managed via openapi-react-query hooks
+- Automatic caching, refetching, invalidation
+
+**Navigation** (TanStack Router):
+
+- URL-driven, type-safe routing
+- File-based route definitions
+
+### Data Flow
+
 ```
+Component → API Hook → openapi-react-query → Backend API
+Component → useNavigate → TanStack Router → URL
+```
+
+## Development
+
+```bash
+pnpm install
+pnpm run dev
+```
+
+Backend API expected at `http://localhost:3000`
+
+## Tech Stack
+
+- **React** + **TypeScript**
+- **TanStack Router** - Type-safe routing
+- **TanStack Query** (via openapi-react-query) - Server state
+- **Tailwind CSS** + **shadcn/ui**
+- **openapi-fetch** - Type-safe API client
