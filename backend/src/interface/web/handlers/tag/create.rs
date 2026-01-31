@@ -6,7 +6,11 @@ use axum::{
 use serde::Deserialize;
 use std::sync::Arc;
 
-use crate::interface::web::handlers::{app_state::AppState, auth::extract_user_id};
+use crate::interface::web::handlers::{
+    app_state::AppState,
+    auth::extract_user_id,
+    uuid_helpers::parse_uuid,
+};
 
 #[derive(Deserialize)]
 pub struct TagVersionRequest {
@@ -21,10 +25,12 @@ pub async fn tag_version(
     Json(payload): Json<TagVersionRequest>,
 ) -> Result<StatusCode, (StatusCode, String)> {
     let user_id = extract_user_id(&headers)?;
+    let prompt_uuid = parse_uuid(&prompt_id, "prompt_id")?;
+    let version_uuid = parse_uuid(&payload.version_id, "version_id")?;
 
     state
         .create_tag
-        .execute(prompt_id, user_id, payload.tag_name, payload.version_id)
+        .execute(prompt_uuid, user_id, payload.tag_name, version_uuid)
         .await
         .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
 

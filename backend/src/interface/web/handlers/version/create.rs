@@ -6,7 +6,11 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-use crate::interface::web::handlers::{app_state::AppState, auth::extract_user_id};
+use crate::interface::web::handlers::{
+    app_state::AppState,
+    auth::extract_user_id,
+    uuid_helpers::parse_uuid,
+};
 
 #[derive(Deserialize)]
 pub struct CreateVersionRequest {
@@ -27,12 +31,15 @@ pub async fn create_version(
     Json(payload): Json<CreateVersionRequest>,
 ) -> Result<(StatusCode, Json<CreateVersionResponse>), (StatusCode, String)> {
     let user_id = extract_user_id(&headers)?;
+    let prompt_uuid = parse_uuid(&prompt_id, "prompt_id")?;
 
     let version_id = state
         .create_version
-        .execute(prompt_id, user_id, payload.version, payload.content, payload.changelog)
+        .execute(prompt_uuid, user_id, payload.version, payload.content, payload.changelog)
         .await
         .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
 
-    Ok((StatusCode::CREATED, Json(CreateVersionResponse { version_id })))
+    Ok((StatusCode::CREATED, Json(CreateVersionResponse {
+        version_id: version_id.to_string()
+    })))
 }

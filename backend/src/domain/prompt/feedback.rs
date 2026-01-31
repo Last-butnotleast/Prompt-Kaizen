@@ -1,9 +1,10 @@
 use chrono::{DateTime, Utc};
+use uuid::Uuid;
 
 #[derive(Debug, Clone)]
 pub struct Feedback {
-    id: String,
-    version_id: String,
+    id: Uuid,
+    version_id: Uuid,
     rating: u8,
     comment: Option<String>,
     created_at: DateTime<Utc>,
@@ -11,8 +12,8 @@ pub struct Feedback {
 
 impl Feedback {
     pub fn new(
-        id: String,
-        version_id: String,
+        id: Uuid,
+        version_id: Uuid,
         rating: u8,
         comment: Option<String>,
     ) -> Result<Self, String> {
@@ -29,12 +30,12 @@ impl Feedback {
         })
     }
 
-    pub fn id(&self) -> &str {
-        &self.id
+    pub fn id(&self) -> Uuid {
+        self.id
     }
 
-    pub fn version_id(&self) -> &str {
-        &self.version_id
+    pub fn version_id(&self) -> Uuid {
+        self.version_id
     }
 
     pub fn rating(&self) -> u8 {

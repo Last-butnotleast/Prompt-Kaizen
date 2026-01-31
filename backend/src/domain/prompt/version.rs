@@ -1,11 +1,12 @@
 use chrono::{DateTime, Utc};
 use sha2::{Sha256, Digest as Sha2Digest};
+use uuid::Uuid;
 use super::Feedback;
 
 #[derive(Debug, Clone)]
 pub struct PromptVersion {
-    id: String,
-    prompt_id: String,
+    id: Uuid,
+    prompt_id: Uuid,
     version: String,
     digest: String,
     content: String,
@@ -16,8 +17,8 @@ pub struct PromptVersion {
 
 impl PromptVersion {
     pub fn new(
-        id: String,
-        prompt_id: String,
+        id: Uuid,
+        prompt_id: Uuid,
         version: String,
         content: String,
         changelog: Option<String>,
@@ -35,12 +36,12 @@ impl PromptVersion {
         }
     }
 
-    pub fn id(&self) -> &str {
-        &self.id
+    pub fn id(&self) -> Uuid {
+        self.id
     }
 
-    pub fn prompt_id(&self) -> &str {
-        &self.prompt_id
+    pub fn prompt_id(&self) -> Uuid {
+        self.prompt_id
     }
 
     pub fn version(&self) -> &str {
@@ -69,11 +70,11 @@ impl PromptVersion {
 
     pub fn add_feedback(
         &mut self,
-        feedback_id: String,
+        feedback_id: Uuid,
         rating: u8,
         comment: Option<String>,
     ) -> Result<&Feedback, String> {
-        let feedback = Feedback::new(feedback_id, self.id.clone(), rating, comment)?;
+        let feedback = Feedback::new(feedback_id, self.id, rating, comment)?;
         self.feedbacks.push(feedback);
         Ok(self.feedbacks.last().unwrap())
     }
@@ -93,7 +94,7 @@ impl PromptVersion {
         format!("sha256:{}", hex::encode(result))
     }
 
-    pub fn delete_feedback(&mut self, feedback_id: &str) -> Result<(), String> {
+    pub fn delete_feedback(&mut self, feedback_id: Uuid) -> Result<(), String> {
         let initial_len = self.feedbacks.len();
         self.feedbacks.retain(|f| f.id() != feedback_id);
 
@@ -104,13 +105,13 @@ impl PromptVersion {
         Ok(())
     }
 
-    pub fn find_feedback(&self, feedback_id: &str) -> Option<&Feedback> {
+    pub fn find_feedback(&self, feedback_id: Uuid) -> Option<&Feedback> {
         self.feedbacks.iter().find(|f| f.id() == feedback_id)
     }
 
     pub(crate) fn update_feedback(
         &mut self,
-        feedback_id: &str,
+        feedback_id: Uuid,
         rating: Option<u8>,
         comment: Option<Option<String>>,
     ) -> Result<(), String> {

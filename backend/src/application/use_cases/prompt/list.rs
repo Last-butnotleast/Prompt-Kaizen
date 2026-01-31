@@ -1,6 +1,7 @@
 use crate::application::PromptRepository;
 use crate::domain::prompt::Prompt;
 use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct ListPrompts {
     repository: Arc<dyn PromptRepository>,
@@ -11,7 +12,7 @@ impl ListPrompts {
         Self { repository }
     }
 
-    pub async fn execute(&self, user_id: String) -> Result<Vec<Prompt>, String> {
-        self.repository.find_by_user(&user_id).await
+    pub async fn execute(&self, user_id: Uuid) -> Result<Vec<Prompt>, String> {
+        self.repository.find_by_user(user_id).await
     }
 }

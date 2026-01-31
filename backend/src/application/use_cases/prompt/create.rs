@@ -1,6 +1,7 @@
 use crate::application::PromptRepository;
 use crate::domain::prompt::Prompt;
 use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct CreatePrompt {
     repository: Arc<dyn PromptRepository>,
@@ -13,12 +14,12 @@ impl CreatePrompt {
 
     pub async fn execute(
         &self,
-        user_id: String,
+        user_id: Uuid,
         name: String,
         description: Option<String>,
-    ) -> Result<String, String> {
-        let id = uuid::Uuid::new_v4().to_string();
-        let prompt = Prompt::new(id.clone(), user_id, name, description);
+    ) -> Result<Uuid, String> {
+        let id = Uuid::new_v4();
+        let prompt = Prompt::new(id, user_id, name, description);
         self.repository.save(&prompt).await?;
         Ok(id)
     }

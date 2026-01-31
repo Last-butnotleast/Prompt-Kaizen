@@ -32,5 +32,7 @@ pub async fn create_prompt(
         .await
         .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
 
-    Ok((StatusCode::CREATED, Json(CreatePromptResponse { id })))
+    Ok((StatusCode::CREATED, Json(CreatePromptResponse {
+        id: id.to_string()
+    })))
 }

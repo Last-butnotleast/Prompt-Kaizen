@@ -4,7 +4,11 @@ use axum::{
 };
 use std::sync::Arc;
 
-use crate::interface::web::handlers::{app_state::AppState, auth::extract_user_id};
+use crate::interface::web::handlers::{
+    app_state::AppState,
+    auth::extract_user_id,
+    uuid_helpers::parse_uuid,
+};
 
 pub async fn delete_prompt(
     State(state): State<Arc<AppState>>,
@@ -12,10 +16,11 @@ pub async fn delete_prompt(
     Path(prompt_id): Path<String>,
 ) -> Result<StatusCode, (StatusCode, String)> {
     let user_id = extract_user_id(&headers)?;
+    let prompt_uuid = parse_uuid(&prompt_id, "prompt_id")?;
 
     state
         .delete_prompt
-        .execute(prompt_id, user_id)
+        .execute(prompt_uuid, user_id)
         .await
         .map_err(|e| (StatusCode::NOT_FOUND, e))?;
 

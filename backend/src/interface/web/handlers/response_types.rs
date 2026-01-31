@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use chrono::{DateTime, Utc};
-use crate::domain::prompt::{Prompt, PromptVersion, Feedback};
+use crate::domain::prompt::{Prompt, PromptVersion, Tag, Feedback};
 
 #[derive(Serialize)]
 pub struct PromptResponse {
@@ -72,8 +72,8 @@ impl From<&PromptVersion> for VersionResponse {
     }
 }
 
-impl From<&crate::domain::prompt::Tag> for TagResponse {
-    fn from(tag: &crate::domain::prompt::Tag) -> Self {
+impl From<&Tag> for TagResponse {
+    fn from(tag: &Tag) -> Self {
         Self {
             id: tag.id().to_string(),
             name: tag.name().to_string(),

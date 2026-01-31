@@ -4,7 +4,11 @@ use axum::{
 };
 use std::sync::Arc;
 
-use crate::interface::web::handlers::{app_state::AppState, auth::extract_user_id};
+use crate::interface::web::handlers::{
+    app_state::AppState,
+    auth::extract_user_id,
+    uuid_helpers::parse_uuid,
+};
 
 pub async fn delete_tag(
     State(state): State<Arc<AppState>>,
@@ -12,10 +16,11 @@ pub async fn delete_tag(
     Path((prompt_id, tag_name)): Path<(String, String)>,
 ) -> Result<StatusCode, (StatusCode, String)> {
     let user_id = extract_user_id(&headers)?;
+    let prompt_uuid = parse_uuid(&prompt_id, "prompt_id")?;
 
     state
         .delete_tag
-        .execute(prompt_id, user_id, tag_name)
+        .execute(prompt_uuid, user_id, tag_name)
         .await
         .map_err(|e| (StatusCode::NOT_FOUND, e))?;
 

@@ -9,6 +9,7 @@ use crate::interface::web::handlers::{
     app_state::AppState,
     auth::extract_user_id,
     response_types::VersionResponse,
+    uuid_helpers::parse_uuid,
 };
 
 pub async fn get_version_by_tag(
@@ -17,10 +18,11 @@ pub async fn get_version_by_tag(
     Path((prompt_id, tag_name)): Path<(String, String)>,
 ) -> Result<Json<VersionResponse>, (StatusCode, String)> {
     let user_id = extract_user_id(&headers)?;
+    let prompt_uuid = parse_uuid(&prompt_id, "prompt_id")?;
 
     let version = state
         .get_version_by_tag
-        .execute(prompt_id, user_id, tag_name)
+        .execute(prompt_uuid, user_id, tag_name)
         .await
         .map_err(|e| (StatusCode::NOT_FOUND, e))?;
 

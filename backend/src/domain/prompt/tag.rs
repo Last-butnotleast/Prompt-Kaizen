@@ -1,19 +1,20 @@
 use chrono::{DateTime, Utc};
+use uuid::Uuid;
 
 #[derive(Debug, Clone)]
 pub struct Tag {
-    id: String,
-    prompt_id: String,
-    version_id: String,
+    id: Uuid,
+    prompt_id: Uuid,
+    version_id: Uuid,
     name: String,
     updated_at: DateTime<Utc>,
 }
 
 impl Tag {
     pub fn new(
-        id: String,
-        prompt_id: String,
-        version_id: String,
+        id: Uuid,
+        prompt_id: Uuid,
+        version_id: Uuid,
         name: String,
     ) -> Self {
         Self {
@@ -25,16 +26,16 @@ impl Tag {
         }
     }
 
-    pub fn id(&self) -> &str {
-        &self.id
+    pub fn id(&self) -> Uuid {
+        self.id
     }
 
-    pub fn prompt_id(&self) -> &str {
-        &self.prompt_id
+    pub fn prompt_id(&self) -> Uuid {
+        self.prompt_id
     }
 
-    pub fn version_id(&self) -> &str {
-        &self.version_id
+    pub fn version_id(&self) -> Uuid {
+        self.version_id
     }
 
     pub fn name(&self) -> &str {
@@ -45,7 +46,7 @@ impl Tag {
         self.updated_at
     }
 
-    pub(crate) fn move_to_version(&mut self, new_version_id: String) {
+    pub(crate) fn move_to_version(&mut self, new_version_id: Uuid) {
         self.version_id = new_version_id;
         self.updated_at = Utc::now();
     }

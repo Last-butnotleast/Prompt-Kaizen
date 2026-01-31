@@ -1,6 +1,7 @@
 use crate::application::PromptRepository;
 use crate::domain::prompt::PromptVersion;
 use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct GetVersionByTag {
     repository: Arc<dyn PromptRepository>,
@@ -13,12 +14,12 @@ impl GetVersionByTag {
 
     pub async fn execute(
         &self,
-        prompt_id: String,
-        user_id: String,
+        prompt_id: Uuid,
+        user_id: Uuid,
         tag_name: String,
     ) -> Result<PromptVersion, String> {
         let prompt = self.repository
-            .find_by_id_and_user(&prompt_id, &user_id)
+            .find_by_id_and_user(prompt_id, user_id)
             .await?
             .ok_or_else(|| "Prompt not found".to_string())?;
 

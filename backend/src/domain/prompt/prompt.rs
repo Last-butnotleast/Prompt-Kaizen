@@ -1,10 +1,11 @@
 use chrono::{DateTime, Utc};
+use uuid::Uuid;
 use super::{PromptVersion, Tag};
 
 #[derive(Debug, Clone)]
 pub struct Prompt {
-    id: String,
-    user_id: String,
+    id: Uuid,
+    user_id: Uuid,
     name: String,
     description: Option<String>,
     created_at: DateTime<Utc>,
@@ -14,7 +15,12 @@ pub struct Prompt {
 }
 
 impl Prompt {
-    pub fn new(id: String, user_id: String, name: String, description: Option<String>) -> Self {
+    pub fn new(
+        id: Uuid,
+        user_id: Uuid,
+        name: String,
+        description: Option<String>,
+    ) -> Self {
         let now = Utc::now();
         Self {
             id,
@@ -28,12 +34,12 @@ impl Prompt {
         }
     }
 
-    pub fn id(&self) -> &str {
-        &self.id
+    pub fn id(&self) -> Uuid {
+        self.id
     }
 
-    pub fn user_id(&self) -> &str {
-        &self.user_id
+    pub fn user_id(&self) -> Uuid {
+        self.user_id
     }
 
     pub fn name(&self) -> &str {
@@ -64,9 +70,13 @@ impl Prompt {
         &self.tags
     }
 
+    pub fn tags_mut(&mut self) -> &mut Vec<Tag> {
+        &mut self.tags
+    }
+
     pub fn add_version(
         &mut self,
-        version_id: String,
+        version_id: Uuid,
         version: String,
         content: String,
         changelog: Option<String>,
@@ -77,7 +87,7 @@ impl Prompt {
 
         let prompt_version = PromptVersion::new(
             version_id,
-            self.id.clone(),
+            self.id,
             version,
             content,
             changelog,
@@ -93,24 +103,24 @@ impl Prompt {
         self.versions.iter().find(|v| v.version() == version)
     }
 
-    pub fn find_version_by_id(&self, id: &str) -> Option<&PromptVersion> {
+    pub fn find_version_by_id(&self, id: Uuid) -> Option<&PromptVersion> {
         self.versions.iter().find(|v| v.id() == id)
     }
 
     pub fn tag_version(
         &mut self,
-        tag_id: String,
+        tag_id: Uuid,
         tag_name: String,
-        version_id: &str,
+        version_id: Uuid,
     ) -> Result<(), String> {
         if !self.versions.iter().any(|v| v.id() == version_id) {
             return Err("Version not found in this prompt".to_string());
         }
 
         if let Some(existing_tag) = self.tags.iter_mut().find(|t| t.name() == tag_name) {
-            existing_tag.move_to_version(version_id.to_string());
+            existing_tag.move_to_version(version_id);
         } else {
-            let tag = Tag::new(tag_id, self.id.clone(), version_id.to_string(), tag_name);
+            let tag = Tag::new(tag_id, self.id, version_id, tag_name);
             self.tags.push(tag);
         }
 
@@ -138,7 +148,7 @@ impl Prompt {
     }
 
     // Delete operations
-    pub fn delete_version(&mut self, version_id: &str) -> Result<(), String> {
+    pub fn delete_version(&mut self, version_id: Uuid) -> Result<(), String> {
         let initial_len = self.versions.len();
         self.versions.retain(|v| v.id() != version_id);
 
@@ -167,8 +177,8 @@ impl Prompt {
     // Access feedback through aggregate
     pub fn update_feedback(
         &mut self,
-        version_id: &str,
-        feedback_id: &str,
+        version_id: Uuid,
+        feedback_id: Uuid,
         rating: Option<u8>,
         comment: Option<Option<String>>,
     ) -> Result<(), String> {
@@ -179,7 +189,7 @@ impl Prompt {
         version.update_feedback(feedback_id, rating, comment)
     }
 
-    pub fn delete_feedback(&mut self, version_id: &str, feedback_id: &str) -> Result<(), String> {
+    pub fn delete_feedback(&mut self, version_id: Uuid, feedback_id: Uuid) -> Result<(), String> {
         let version = self.versions.iter_mut()
             .find(|v| v.id() == version_id)
             .ok_or("Version not found")?;

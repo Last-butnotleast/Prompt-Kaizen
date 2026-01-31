@@ -6,7 +6,11 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-use crate::interface::web::handlers::{app_state::AppState, auth::extract_user_id};
+use crate::interface::web::handlers::{
+    app_state::AppState,
+    auth::extract_user_id,
+    uuid_helpers::parse_uuid,
+};
 
 #[derive(Deserialize)]
 pub struct SubmitFeedbackRequest {
@@ -27,12 +31,16 @@ pub async fn submit_feedback(
     Json(payload): Json<SubmitFeedbackRequest>,
 ) -> Result<(StatusCode, Json<SubmitFeedbackResponse>), (StatusCode, String)> {
     let user_id = extract_user_id(&headers)?;
+    let prompt_uuid = parse_uuid(&prompt_id, "prompt_id")?;
+    let version_uuid = parse_uuid(&payload.version_id, "version_id")?;
 
     let feedback_id = state
         .submit_feedback
-        .execute(prompt_id, user_id, payload.version_id, payload.rating, payload.comment)
+        .execute(prompt_uuid, user_id, version_uuid, payload.rating, payload.comment)
         .await
         .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
 
-    Ok((StatusCode::CREATED, Json(SubmitFeedbackResponse { feedback_id })))
+    Ok((StatusCode::CREATED, Json(SubmitFeedbackResponse {
+        feedback_id: feedback_id.to_string()
+    })))
 }

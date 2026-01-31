@@ -4,31 +4,31 @@ mod infrastructure;
 mod interface;
 
 use std::sync::Arc;
-use infrastructure::repositories::{InMemoryPromptRepository, PostgresPromptRepository};
-use application::{use_cases::*, PromptRepository};
+use infrastructure::repositories::PostgresPromptRepository;
+use application::use_cases::*;
 use interface::web::{create_router, handlers::AppState};
 
 #[tokio::main]
 async fn main() {
     dotenvy::dotenv().ok();
 
-    let repository: Arc<dyn PromptRepository> = if let Ok(database_url) = std::env::var("DATABASE_URL") {
-        println!("🔗 Connecting to PostgreSQL...");
-        let pool = sqlx::PgPool::connect(&database_url)
-            .await
-            .expect("Failed to connect to database");
+    let database_url = std::env::var("DATABASE_URL")
+        .expect("DATABASE_URL must be set in .env file");
 
-        sqlx::migrate!("./migrations")
-            .run(&pool)
-            .await
-            .expect("Failed to run migrations");
+    println!("🔗 Connecting to Supabase PostgreSQL...");
+    let pool = sqlx::PgPool::connect(&database_url)
+        .await
+        .expect("Failed to connect to database");
 
-        println!("✅ PostgreSQL connected");
-        Arc::new(PostgresPromptRepository::new(pool))
-    } else {
-        println!("📦 Using in-memory storage");
-        Arc::new(InMemoryPromptRepository::new())
-    };
+    println!("🔄 Running migrations...");
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .expect("Failed to run migrations");
+
+    println!("✅ Database connected and migrated");
+
+    let repository = Arc::new(PostgresPromptRepository::new(pool));
 
     let create_prompt = Arc::new(CreatePrompt::new(repository.clone()));
     let update_prompt = Arc::new(UpdatePrompt::new(repository.clone()));
