@@ -4,13 +4,31 @@ mod infrastructure;
 mod interface;
 
 use std::sync::Arc;
-use infrastructure::repositories::InMemoryPromptRepository;
-use application::use_cases::*;
+use infrastructure::repositories::{InMemoryPromptRepository, PostgresPromptRepository};
+use application::{use_cases::*, PromptRepository};
 use interface::web::{create_router, handlers::prompt_handlers::AppState};
 
 #[tokio::main]
 async fn main() {
-    let repository = Arc::new(InMemoryPromptRepository::new());
+    dotenvy::dotenv().ok();
+
+    let repository: Arc<dyn PromptRepository> = if let Ok(database_url) = std::env::var("DATABASE_URL") {
+        println!("🔗 Connecting to PostgreSQL...");
+        let pool = sqlx::PgPool::connect(&database_url)
+            .await
+            .expect("Failed to connect to database");
+
+        sqlx::migrate!("./migrations")
+            .run(&pool)
+            .await
+            .expect("Failed to run migrations");
+
+        println!("✅ PostgreSQL connected");
+        Arc::new(PostgresPromptRepository::new(pool))
+    } else {
+        println!("📦 Using in-memory storage");
+        Arc::new(InMemoryPromptRepository::new())
+    };
 
     let create_prompt = Arc::new(CreatePrompt::new(repository.clone()));
     let update_prompt = Arc::new(UpdatePrompt::new(repository.clone()));
