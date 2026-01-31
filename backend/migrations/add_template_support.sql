@@ -1,0 +1,4 @@
+ALTER TABLE prompts ADD COLUMN prompt_type VARCHAR(20) NOT NULL DEFAULT 'system';
+
+ALTER TABLE versions ADD COLUMN content_type VARCHAR(20) NOT NULL DEFAULT 'static';
+ALTER TABLE versions ADD COLUMN variables JSONB;

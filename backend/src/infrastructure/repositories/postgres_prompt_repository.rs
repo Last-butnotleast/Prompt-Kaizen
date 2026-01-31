@@ -1,5 +1,5 @@
 use crate::application::PromptRepository;
-use crate::domain::prompt::{Prompt, PromptVersion, Tag, Feedback, Version};
+use crate::domain::prompt::{Prompt, PromptVersion, Tag, Feedback, Version, PromptType, ContentType};
 use async_trait::async_trait;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
@@ -15,7 +15,7 @@ impl PostgresPromptRepository {
 
     async fn fetch_versions(&self, prompt_id: Uuid) -> Result<Vec<PromptVersion>, String> {
         let rows = sqlx::query(
-            "SELECT id, prompt_id, version, digest, content, changelog, created_at
+            "SELECT id, prompt_id, version, digest, content, content_type, variables, changelog, created_at
              FROM versions WHERE prompt_id = $1 ORDER BY created_at"
         )
             .bind(prompt_id)
@@ -33,11 +33,24 @@ impl PostgresPromptRepository {
             let version_string: String = row.try_get("version").map_err(|e| e.to_string())?;
             let version = Version::from_str(&version_string)?;
 
+            let content_type_str: String = row.try_get("content_type").map_err(|e| e.to_string())?;
+            let content_type = match content_type_str.as_str() {
+                "static" => ContentType::Static,
+                "template" => ContentType::Template,
+                _ => return Err("Invalid content_type".to_string()),
+            };
+
+            let variables: Option<Vec<String>> = row.try_get::<Option<sqlx::types::Json<Vec<String>>>, _>("variables")
+                .map_err(|e| e.to_string())?
+                .map(|j| j.0);
+
             let mut version = PromptVersion::new(
                 version_id,
                 prompt_id,
                 version,
                 row.try_get("content").map_err(|e| e.to_string())?,
+                content_type,
+                variables,
                 row.try_get("changelog").map_err(|e| e.to_string())?,
             );
 
@@ -114,15 +127,24 @@ impl PostgresPromptRepository {
             .map_err(|e| format!("Failed to delete versions: {}", e))?;
 
         for version in versions {
+            let content_type_str = match version.content_type() {
+                ContentType::Static => "static",
+                ContentType::Template => "template",
+            };
+
+            let variables_json = version.variables().map(|v| sqlx::types::Json(v.to_vec()));
+
             sqlx::query(
-                "INSERT INTO versions (id, prompt_id, version, digest, content, changelog, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)"
+                "INSERT INTO versions (id, prompt_id, version, digest, content, content_type, variables, changelog, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
             )
                 .bind(version.id())
                 .bind(version.prompt_id())
                 .bind(version.version_string())
                 .bind(version.digest())
                 .bind(version.content())
+                .bind(content_type_str)
+                .bind(variables_json)
                 .bind(version.changelog())
                 .bind(version.created_at())
                 .execute(&self.pool)
@@ -186,6 +208,13 @@ impl PostgresPromptRepository {
         let prompt_id: Uuid = row.try_get("id").map_err(|e| e.to_string())?;
         let user_id: Uuid = row.try_get("user_id").map_err(|e| e.to_string())?;
 
+        let prompt_type_str: String = row.try_get("prompt_type").map_err(|e| e.to_string())?;
+        let prompt_type = match prompt_type_str.as_str() {
+            "system" => PromptType::System,
+            "user" => PromptType::User,
+            _ => return Err("Invalid prompt_type".to_string()),
+        };
+
         let versions = self.fetch_versions(prompt_id).await?;
         let tags = self.fetch_tags(prompt_id).await?;
 
@@ -194,6 +223,7 @@ impl PostgresPromptRepository {
             user_id,
             row.try_get("name").map_err(|e| e.to_string())?,
             row.try_get("description").map_err(|e| e.to_string())?,
+            prompt_type,
         );
 
         for version in versions {
@@ -211,18 +241,25 @@ impl PostgresPromptRepository {
 #[async_trait]
 impl PromptRepository for PostgresPromptRepository {
     async fn save(&self, prompt: &Prompt) -> Result<(), String> {
+        let prompt_type_str = match prompt.prompt_type() {
+            PromptType::System => "system",
+            PromptType::User => "user",
+        };
+
         sqlx::query(
-            "INSERT INTO prompts (id, user_id, name, description, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6)
+            "INSERT INTO prompts (id, user_id, name, description, prompt_type, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
          ON CONFLICT (id) DO UPDATE SET
          name = EXCLUDED.name,
          description = EXCLUDED.description,
+         prompt_type = EXCLUDED.prompt_type,
          updated_at = EXCLUDED.updated_at"
         )
             .bind(prompt.id())
             .bind(prompt.user_id())
             .bind(prompt.name())
             .bind(prompt.description())
+            .bind(prompt_type_str)
             .bind(prompt.created_at())
             .bind(prompt.updated_at())
             .execute(&self.pool)
@@ -237,7 +274,7 @@ impl PromptRepository for PostgresPromptRepository {
 
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Prompt>, String> {
         let row = sqlx::query(
-            "SELECT id, user_id, name, description, created_at, updated_at
+            "SELECT id, user_id, name, description, prompt_type, created_at, updated_at
              FROM prompts WHERE id = $1"
         )
             .bind(id)
@@ -253,7 +290,7 @@ impl PromptRepository for PostgresPromptRepository {
 
     async fn find_by_id_and_user(&self, id: Uuid, user_id: Uuid) -> Result<Option<Prompt>, String> {
         let row = sqlx::query(
-            "SELECT id, user_id, name, description, created_at, updated_at
+            "SELECT id, user_id, name, description, prompt_type, created_at, updated_at
              FROM prompts WHERE id = $1 AND user_id = $2"
         )
             .bind(id)
@@ -270,7 +307,7 @@ impl PromptRepository for PostgresPromptRepository {
 
     async fn find_all(&self) -> Result<Vec<Prompt>, String> {
         let rows = sqlx::query(
-            "SELECT id, user_id, name, description, created_at, updated_at
+            "SELECT id, user_id, name, description, prompt_type, created_at, updated_at
              FROM prompts ORDER BY created_at DESC"
         )
             .fetch_all(&self.pool)
@@ -287,7 +324,7 @@ impl PromptRepository for PostgresPromptRepository {
 
     async fn find_by_user(&self, user_id: Uuid) -> Result<Vec<Prompt>, String> {
         let rows = sqlx::query(
-            "SELECT id, user_id, name, description, created_at, updated_at
+            "SELECT id, user_id, name, description, prompt_type, created_at, updated_at
              FROM prompts WHERE user_id = $1 ORDER BY created_at DESC"
         )
             .bind(user_id)
@@ -305,7 +342,7 @@ impl PromptRepository for PostgresPromptRepository {
 
     async fn find_by_tag(&self, tag_name: &str) -> Result<Vec<Prompt>, String> {
         let rows = sqlx::query(
-            "SELECT DISTINCT p.id, p.user_id, p.name, p.description, p.created_at, p.updated_at
+            "SELECT DISTINCT p.id, p.user_id, p.name, p.description, p.prompt_type, p.created_at, p.updated_at
              FROM prompts p
              INNER JOIN tags t ON p.id = t.prompt_id
              WHERE t.name = $1
