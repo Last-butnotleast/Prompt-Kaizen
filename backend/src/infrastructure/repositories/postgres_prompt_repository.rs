@@ -103,14 +103,17 @@ impl PostgresPromptRepository {
             .collect()
     }
 
-    async fn save_versions(&self, versions: &[PromptVersion]) -> Result<(), String> {
+    async fn save_versions(&self, prompt_id: Uuid, versions: &[PromptVersion]) -> Result<(), String> {
+        sqlx::query("DELETE FROM versions WHERE prompt_id = $1")
+            .bind(prompt_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to delete versions: {}", e))?;
+
         for version in versions {
             sqlx::query(
                 "INSERT INTO versions (id, prompt_id, version, digest, content, changelog, created_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7)
-                 ON CONFLICT (id) DO UPDATE SET
-                 content = EXCLUDED.content,
-                 changelog = EXCLUDED.changelog"
+             VALUES ($1, $2, $3, $4, $5, $6, $7)"
             )
                 .bind(version.id())
                 .bind(version.prompt_id())
@@ -128,14 +131,17 @@ impl PostgresPromptRepository {
         Ok(())
     }
 
-    async fn save_tags(&self, tags: &[Tag]) -> Result<(), String> {
+    async fn save_tags(&self, prompt_id: Uuid, tags: &[Tag]) -> Result<(), String> {
+        sqlx::query("DELETE FROM tags WHERE prompt_id = $1")
+            .bind(prompt_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to delete tags: {}", e))?;
+
         for tag in tags {
             sqlx::query(
                 "INSERT INTO tags (id, prompt_id, version_id, name, updated_at)
-                 VALUES ($1, $2, $3, $4, $5)
-                 ON CONFLICT (prompt_id, name) DO UPDATE SET
-                 version_id = EXCLUDED.version_id,
-                 updated_at = EXCLUDED.updated_at"
+             VALUES ($1, $2, $3, $4, $5)"
             )
                 .bind(tag.id())
                 .bind(tag.prompt_id())
@@ -150,13 +156,16 @@ impl PostgresPromptRepository {
     }
 
     async fn save_feedbacks(&self, version_id: Uuid, feedbacks: &[Feedback]) -> Result<(), String> {
+        sqlx::query("DELETE FROM feedbacks WHERE version_id = $1")
+            .bind(version_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to delete feedbacks: {}", e))?;
+
         for feedback in feedbacks {
             sqlx::query(
                 "INSERT INTO feedbacks (id, version_id, rating, comment, created_at)
-                 VALUES ($1, $2, $3, $4, $5)
-                 ON CONFLICT (id) DO UPDATE SET
-                 rating = EXCLUDED.rating,
-                 comment = EXCLUDED.comment"
+             VALUES ($1, $2, $3, $4, $5)"
             )
                 .bind(feedback.id())
                 .bind(version_id)
@@ -201,11 +210,11 @@ impl PromptRepository for PostgresPromptRepository {
     async fn save(&self, prompt: &Prompt) -> Result<(), String> {
         sqlx::query(
             "INSERT INTO prompts (id, user_id, name, description, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, $5, $6)
-             ON CONFLICT (id) DO UPDATE SET
-             name = EXCLUDED.name,
-             description = EXCLUDED.description,
-             updated_at = EXCLUDED.updated_at"
+         VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (id) DO UPDATE SET
+         name = EXCLUDED.name,
+         description = EXCLUDED.description,
+         updated_at = EXCLUDED.updated_at"
         )
             .bind(prompt.id())
             .bind(prompt.user_id())
@@ -217,8 +226,8 @@ impl PromptRepository for PostgresPromptRepository {
             .await
             .map_err(|e| format!("Failed to save prompt: {}", e))?;
 
-        self.save_versions(prompt.versions()).await?;
-        self.save_tags(prompt.tags()).await?;
+        self.save_versions(prompt.id(), prompt.versions()).await?;
+        self.save_tags(prompt.id(), prompt.tags()).await?;
 
         Ok(())
     }
