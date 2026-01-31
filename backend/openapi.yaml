@@ -9,6 +9,8 @@ info:
 servers:
   - url: http://localhost:3000
     description: Local development server
+  - url: https://backend-hidden-field-9510.fly.dev/
+    description: Prod development server
 
 paths:
   /prompts:
