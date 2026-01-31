@@ -6,7 +6,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-use crate::interface::web::handlers::{app_state::AppState, auth::extract_user_id};
+use crate::interface::web::handlers::{app_state::AppState, auth::extract_user_id_with_api_key};
 
 #[derive(Deserialize)]
 pub struct CreatePromptRequest {
@@ -24,7 +24,7 @@ pub async fn create_prompt(
     headers: HeaderMap,
     Json(payload): Json<CreatePromptRequest>,
 ) -> Result<(StatusCode, Json<CreatePromptResponse>), (StatusCode, String)> {
-    let user_id = extract_user_id(&headers)?;
+    let user_id = extract_user_id_with_api_key(&headers, state.api_key_repository.clone()).await?;
 
     let id = state
         .create_prompt

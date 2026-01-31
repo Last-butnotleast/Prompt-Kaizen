@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use crate::interface::web::handlers::{
     app_state::AppState,
-    auth::extract_user_id,
+    auth::extract_user_id_with_api_key,
     uuid_helpers::parse_uuid,
 };
 
@@ -15,7 +15,7 @@ pub async fn delete_tag(
     headers: HeaderMap,
     Path((prompt_id, tag_name)): Path<(String, String)>,
 ) -> Result<StatusCode, (StatusCode, String)> {
-    let user_id = extract_user_id(&headers)?;
+    let user_id = extract_user_id_with_api_key(&headers, state.api_key_repository.clone()).await?;
     let prompt_uuid = parse_uuid(&prompt_id, "prompt_id")?;
 
     state

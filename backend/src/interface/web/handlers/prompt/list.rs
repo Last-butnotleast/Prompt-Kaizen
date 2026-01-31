@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use crate::interface::web::handlers::{
     app_state::AppState,
-    auth::extract_user_id,
+    auth::extract_user_id_with_api_key,
     response_types::PromptResponse,
 };
 
@@ -15,7 +15,7 @@ pub async fn list_prompts(
     State(state): State<Arc<AppState>>,
     headers: HeaderMap,
 ) -> Result<Json<Vec<PromptResponse>>, (StatusCode, String)> {
-    let user_id = extract_user_id(&headers)?;
+    let user_id = extract_user_id_with_api_key(&headers, state.api_key_repository.clone()).await?;
 
     let prompts = state
         .list_prompts
