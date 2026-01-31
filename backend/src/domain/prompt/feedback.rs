@@ -48,4 +48,16 @@ impl Feedback {
     pub fn created_at(&self) -> DateTime<Utc> {
         self.created_at
     }
+
+    pub fn update_rating(&mut self, rating: u8) -> Result<(), String> {
+        if !(1..=5).contains(&rating) {
+            return Err("Rating must be between 1 and 5".to_string());
+        }
+        self.rating = rating;
+        Ok(())
+    }
+
+    pub fn update_comment(&mut self, comment: Option<String>) {
+        self.comment = comment;
+    }
 }

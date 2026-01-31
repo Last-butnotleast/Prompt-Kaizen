@@ -92,4 +92,38 @@ impl PromptVersion {
         let result = hasher.finalize();
         format!("sha256:{}", hex::encode(result))
     }
+
+    pub fn delete_feedback(&mut self, feedback_id: &str) -> Result<(), String> {
+        let initial_len = self.feedbacks.len();
+        self.feedbacks.retain(|f| f.id() != feedback_id);
+
+        if self.feedbacks.len() == initial_len {
+            return Err("Feedback not found".to_string());
+        }
+
+        Ok(())
+    }
+
+    pub fn find_feedback(&self, feedback_id: &str) -> Option<&Feedback> {
+        self.feedbacks.iter().find(|f| f.id() == feedback_id)
+    }
+
+    pub(crate) fn update_feedback(
+        &mut self,
+        feedback_id: &str,
+        rating: Option<u8>,
+        comment: Option<Option<String>>,
+    ) -> Result<(), String> {
+        let feedback = self.feedbacks.iter_mut()
+            .find(|f| f.id() == feedback_id)
+            .ok_or("Feedback not found")?;
+
+        if let Some(r) = rating {
+            feedback.update_rating(r)?;
+        }
+        if let Some(c) = comment {
+            feedback.update_comment(c);
+        }
+        Ok(())
+    }
 }
