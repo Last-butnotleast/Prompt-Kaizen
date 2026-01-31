@@ -4,6 +4,7 @@ use super::{PromptVersion, Tag};
 #[derive(Debug, Clone)]
 pub struct Prompt {
     id: String,
+    user_id: String,
     name: String,
     description: Option<String>,
     created_at: DateTime<Utc>,
@@ -13,10 +14,11 @@ pub struct Prompt {
 }
 
 impl Prompt {
-    pub fn new(id: String, name: String, description: Option<String>) -> Self {
+    pub fn new(id: String, user_id: String, name: String, description: Option<String>) -> Self {
         let now = Utc::now();
         Self {
             id,
+            user_id,
             name,
             description,
             created_at: now,
@@ -28,6 +30,10 @@ impl Prompt {
 
     pub fn id(&self) -> &str {
         &self.id
+    }
+
+    pub fn user_id(&self) -> &str {
+        &self.user_id
     }
 
     pub fn name(&self) -> &str {

@@ -5,12 +5,12 @@ use axum::{
 use std::sync::Arc;
 use tower_http::cors::{CorsLayer, Any};
 
-use super::handlers::prompt_handlers::{
-    create_prompt, update_prompt, get_prompt, list_prompts, delete_prompt,
-    create_version, get_version, delete_version,
-    tag_version, delete_tag, get_version_by_tag,
-    submit_feedback, update_feedback, delete_feedback,
+use super::handlers::{
     AppState,
+    prompt::{create_prompt, update_prompt, get_prompt, list_prompts, delete_prompt},
+    version::{create_version, get_version, delete_version},
+    tag::{tag_version, delete_tag, get_version_by_tag},
+    feedback::{submit_feedback, update_feedback, delete_feedback},
 };
 
 pub fn create_router(state: Arc<AppState>) -> Router {

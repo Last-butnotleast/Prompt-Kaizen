@@ -14,10 +14,11 @@ impl GetVersionByTag {
     pub async fn execute(
         &self,
         prompt_id: String,
+        user_id: String,
         tag_name: String,
     ) -> Result<PromptVersion, String> {
         let prompt = self.repository
-            .find_by_id(&prompt_id)
+            .find_by_id_and_user(&prompt_id, &user_id)
             .await?
             .ok_or_else(|| "Prompt not found".to_string())?;
 

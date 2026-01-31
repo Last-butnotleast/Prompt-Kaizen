@@ -29,9 +29,25 @@ impl PromptRepository for InMemoryPromptRepository {
         Ok(store.get(id).cloned())
     }
 
+    async fn find_by_id_and_user(&self, id: &str, user_id: &str) -> Result<Option<Prompt>, String> {
+        let store = self.store.read().await;
+        Ok(store.get(id)
+            .filter(|p| p.user_id() == user_id)
+            .cloned())
+    }
+
     async fn find_all(&self) -> Result<Vec<Prompt>, String> {
         let store = self.store.read().await;
         Ok(store.values().cloned().collect())
+    }
+
+    async fn find_by_user(&self, user_id: &str) -> Result<Vec<Prompt>, String> {
+        let store = self.store.read().await;
+        Ok(store
+            .values()
+            .filter(|p| p.user_id() == user_id)
+            .cloned()
+            .collect())
     }
 
     async fn find_by_tag(&self, tag_name: &str) -> Result<Vec<Prompt>, String> {

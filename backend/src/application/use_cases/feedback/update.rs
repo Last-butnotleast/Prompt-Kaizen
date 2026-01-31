@@ -13,13 +13,14 @@ impl UpdateFeedback {
     pub async fn execute(
         &self,
         prompt_id: String,
+        user_id: String,
         version_id: String,
         feedback_id: String,
         rating: Option<u8>,
         comment: Option<Option<String>>,
     ) -> Result<(), String> {
         let mut prompt = self.repository
-            .find_by_id(&prompt_id)
+            .find_by_id_and_user(&prompt_id, &user_id)
             .await?
             .ok_or_else(|| "Prompt not found".to_string())?;
 

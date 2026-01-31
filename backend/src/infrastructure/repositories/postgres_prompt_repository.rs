@@ -27,13 +27,23 @@ impl PostgresPromptRepository {
             let version_id: String = row.try_get("id").map_err(|e| e.to_string())?;
             let feedbacks = self.fetch_feedbacks(&version_id).await?;
 
-            versions.push(PromptVersion::new(
+            let mut version = PromptVersion::new(
                 row.try_get("id").map_err(|e| e.to_string())?,
                 row.try_get("prompt_id").map_err(|e| e.to_string())?,
                 row.try_get("version").map_err(|e| e.to_string())?,
                 row.try_get("content").map_err(|e| e.to_string())?,
                 row.try_get("changelog").map_err(|e| e.to_string())?,
-            ));
+            );
+
+            for feedback in feedbacks {
+                let _ = version.add_feedback(
+                    feedback.id().to_string(),
+                    feedback.rating(),
+                    feedback.comment().map(|s| s.to_string()),
+                );
+            }
+
+            versions.push(version);
         }
 
         Ok(versions)
@@ -149,20 +159,44 @@ impl PostgresPromptRepository {
         }
         Ok(())
     }
+
+    async fn build_prompt(&self, row: &sqlx::postgres::PgRow) -> Result<Prompt, String> {
+        let prompt_id: String = row.try_get("id").map_err(|e| e.to_string())?;
+        let versions = self.fetch_versions(&prompt_id).await?;
+        let tags = self.fetch_tags(&prompt_id).await?;
+
+        let mut prompt = Prompt::new(
+            prompt_id,
+            row.try_get("user_id").map_err(|e| e.to_string())?,
+            row.try_get("name").map_err(|e| e.to_string())?,
+            row.try_get("description").map_err(|e| e.to_string())?,
+        );
+
+        for version in versions {
+            prompt.versions_mut().push(version);
+        }
+
+        for tag in tags {
+            prompt.versions_mut();
+        }
+
+        Ok(prompt)
+    }
 }
 
 #[async_trait]
 impl PromptRepository for PostgresPromptRepository {
     async fn save(&self, prompt: &Prompt) -> Result<(), String> {
         sqlx::query(
-            "INSERT INTO prompts (id, name, description, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, $5)
+            "INSERT INTO prompts (id, user_id, name, description, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6)
              ON CONFLICT (id) DO UPDATE SET
              name = EXCLUDED.name,
              description = EXCLUDED.description,
              updated_at = EXCLUDED.updated_at"
         )
             .bind(prompt.id())
+            .bind(prompt.user_id())
             .bind(prompt.name())
             .bind(prompt.description())
             .bind(prompt.created_at())
@@ -179,7 +213,7 @@ impl PromptRepository for PostgresPromptRepository {
 
     async fn find_by_id(&self, id: &str) -> Result<Option<Prompt>, String> {
         let row = sqlx::query(
-            "SELECT id, name, description, created_at, updated_at
+            "SELECT id, user_id, name, description, created_at, updated_at
              FROM prompts WHERE id = $1"
         )
             .bind(id)
@@ -188,34 +222,31 @@ impl PromptRepository for PostgresPromptRepository {
             .map_err(|e| format!("Failed to find prompt: {}", e))?;
 
         match row {
-            Some(row) => {
-                let prompt_id: String = row.try_get("id").map_err(|e| e.to_string())?;
-                let versions = self.fetch_versions(&prompt_id).await?;
-                let tags = self.fetch_tags(&prompt_id).await?;
+            Some(row) => Ok(Some(self.build_prompt(&row).await?)),
+            None => Ok(None),
+        }
+    }
 
-                let mut prompt = Prompt::new(
-                    prompt_id,
-                    row.try_get("name").map_err(|e| e.to_string())?,
-                    row.try_get("description").map_err(|e| e.to_string())?,
-                );
+    async fn find_by_id_and_user(&self, id: &str, user_id: &str) -> Result<Option<Prompt>, String> {
+        let row = sqlx::query(
+            "SELECT id, user_id, name, description, created_at, updated_at
+             FROM prompts WHERE id = $1 AND user_id = $2"
+        )
+            .bind(id)
+            .bind(user_id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to find prompt: {}", e))?;
 
-                for version in versions {
-                    prompt.versions_mut().push(version);
-                }
-
-                for tag in tags {
-                    prompt.versions_mut();
-                }
-
-                Ok(Some(prompt))
-            }
+        match row {
+            Some(row) => Ok(Some(self.build_prompt(&row).await?)),
             None => Ok(None),
         }
     }
 
     async fn find_all(&self) -> Result<Vec<Prompt>, String> {
         let rows = sqlx::query(
-            "SELECT id, name, description, created_at, updated_at
+            "SELECT id, user_id, name, description, created_at, updated_at
              FROM prompts ORDER BY created_at DESC"
         )
             .fetch_all(&self.pool)
@@ -224,21 +255,25 @@ impl PromptRepository for PostgresPromptRepository {
 
         let mut prompts = Vec::new();
         for row in rows {
-            let prompt_id: String = row.try_get("id").map_err(|e| e.to_string())?;
-            let versions = self.fetch_versions(&prompt_id).await?;
-            let tags = self.fetch_tags(&prompt_id).await?;
+            prompts.push(self.build_prompt(&row).await?);
+        }
 
-            let mut prompt = Prompt::new(
-                prompt_id,
-                row.try_get("name").map_err(|e| e.to_string())?,
-                row.try_get("description").map_err(|e| e.to_string())?,
-            );
+        Ok(prompts)
+    }
 
-            for version in versions {
-                prompt.versions_mut().push(version);
-            }
+    async fn find_by_user(&self, user_id: &str) -> Result<Vec<Prompt>, String> {
+        let rows = sqlx::query(
+            "SELECT id, user_id, name, description, created_at, updated_at
+             FROM prompts WHERE user_id = $1 ORDER BY created_at DESC"
+        )
+            .bind(user_id)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to fetch prompts: {}", e))?;
 
-            prompts.push(prompt);
+        let mut prompts = Vec::new();
+        for row in rows {
+            prompts.push(self.build_prompt(&row).await?);
         }
 
         Ok(prompts)
@@ -246,7 +281,7 @@ impl PromptRepository for PostgresPromptRepository {
 
     async fn find_by_tag(&self, tag_name: &str) -> Result<Vec<Prompt>, String> {
         let rows = sqlx::query(
-            "SELECT DISTINCT p.id, p.name, p.description, p.created_at, p.updated_at
+            "SELECT DISTINCT p.id, p.user_id, p.name, p.description, p.created_at, p.updated_at
              FROM prompts p
              INNER JOIN tags t ON p.id = t.prompt_id
              WHERE t.name = $1
@@ -259,21 +294,7 @@ impl PromptRepository for PostgresPromptRepository {
 
         let mut prompts = Vec::new();
         for row in rows {
-            let prompt_id: String = row.try_get("id").map_err(|e| e.to_string())?;
-            let versions = self.fetch_versions(&prompt_id).await?;
-            let tags = self.fetch_tags(&prompt_id).await?;
-
-            let mut prompt = Prompt::new(
-                prompt_id,
-                row.try_get("name").map_err(|e| e.to_string())?,
-                row.try_get("description").map_err(|e| e.to_string())?,
-            );
-
-            for version in versions {
-                prompt.versions_mut().push(version);
-            }
-
-            prompts.push(prompt);
+            prompts.push(self.build_prompt(&row).await?);
         }
 
         Ok(prompts)

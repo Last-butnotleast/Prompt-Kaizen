@@ -13,11 +13,12 @@ impl CreatePrompt {
 
     pub async fn execute(
         &self,
+        user_id: String,
         name: String,
         description: Option<String>,
     ) -> Result<String, String> {
         let id = uuid::Uuid::new_v4().to_string();
-        let prompt = Prompt::new(id.clone(), name, description);
+        let prompt = Prompt::new(id.clone(), user_id, name, description);
         self.repository.save(&prompt).await?;
         Ok(id)
     }

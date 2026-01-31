@@ -11,7 +11,7 @@ impl ListPrompts {
         Self { repository }
     }
 
-    pub async fn execute(&self) -> Result<Vec<Prompt>, String> {
-        self.repository.find_all().await
+    pub async fn execute(&self, user_id: String) -> Result<Vec<Prompt>, String> {
+        self.repository.find_by_user(&user_id).await
     }
 }

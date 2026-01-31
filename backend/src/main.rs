@@ -6,7 +6,7 @@ mod interface;
 use std::sync::Arc;
 use infrastructure::repositories::{InMemoryPromptRepository, PostgresPromptRepository};
 use application::{use_cases::*, PromptRepository};
-use interface::web::{create_router, handlers::prompt_handlers::AppState};
+use interface::web::{create_router, handlers::AppState};
 
 #[tokio::main]
 async fn main() {

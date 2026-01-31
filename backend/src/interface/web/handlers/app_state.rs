@@ -1,0 +1,22 @@
+use std::sync::Arc;
+use crate::application::use_cases::*;
+
+pub struct AppState {
+    pub create_prompt: Arc<CreatePrompt>,
+    pub update_prompt: Arc<UpdatePrompt>,
+    pub get_prompt: Arc<GetPrompt>,
+    pub list_prompts: Arc<ListPrompts>,
+    pub delete_prompt: Arc<DeletePrompt>,
+
+    pub create_version: Arc<CreateVersion>,
+    pub get_version: Arc<GetVersion>,
+    pub delete_version: Arc<DeleteVersion>,
+
+    pub create_tag: Arc<CreateTag>,
+    pub delete_tag: Arc<DeleteTag>,
+    pub get_version_by_tag: Arc<GetVersionByTag>,
+
+    pub submit_feedback: Arc<SubmitFeedback>,
+    pub update_feedback: Arc<UpdateFeedback>,
+    pub delete_feedback: Arc<DeleteFeedback>,
+}
