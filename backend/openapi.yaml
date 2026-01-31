@@ -1,0 +1,340 @@
+openapi: 3.0.3
+info:
+  title: Prompt Kaizen API
+  description: Continuous Improvement Platform for AI Prompts
+  version: 0.1.0
+  contact:
+    name: Prompt Kaizen
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+paths:
+  /prompts:
+    post:
+      summary: Create a new prompt
+      operationId: createPrompt
+      tags:
+        - Prompts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePromptRequest'
+      responses:
+        '201':
+          description: Prompt created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatePromptResponse'
+        '400':
+          description: Bad request
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /prompts/{prompt_id}/versions:
+    post:
+      summary: Create a new version of a prompt
+      operationId: createVersion
+      tags:
+        - Versions
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVersionRequest'
+      responses:
+        '201':
+          description: Version created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateVersionResponse'
+        '400':
+          description: Bad request
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /prompts/{prompt_id}/tags:
+    post:
+      summary: Tag a specific version
+      operationId: tagVersion
+      tags:
+        - Tags
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagVersionRequest'
+      responses:
+        '200':
+          description: Version tagged successfully
+        '400':
+          description: Bad request
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /prompts/{prompt_id}/feedback:
+    post:
+      summary: Submit feedback for a prompt version
+      operationId: submitFeedback
+      tags:
+        - Feedback
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitFeedbackRequest'
+      responses:
+        '201':
+          description: Feedback submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmitFeedbackResponse'
+        '400':
+          description: Bad request
+          content:
+            text/plain:
+              schema:
+                type: string
+
+components:
+  schemas:
+    Prompt:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        name:
+          type: string
+          example: "My First Prompt"
+        description:
+          type: string
+          nullable: true
+          example: "Test prompt for MVP"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-31T12:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-31T12:30:00Z"
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PromptVersion'
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+
+    PromptVersion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "660e8400-e29b-41d4-a716-446655440000"
+        prompt_id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        version:
+          type: string
+          pattern: '^\d+\.\d+\.\d+$'
+          example: "0.0.1"
+        digest:
+          type: string
+          example: "sha256:a3b2c1d4e5f6..."
+          description: "SHA256 hash of the content"
+        content:
+          type: string
+          example: "Hello {{name}}, you are a helpful assistant."
+        changelog:
+          type: string
+          nullable: true
+          example: "Initial version"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-31T12:00:00Z"
+        feedbacks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Feedback'
+
+    Tag:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "770e8400-e29b-41d4-a716-446655440000"
+        prompt_id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        version_id:
+          type: string
+          format: uuid
+          example: "660e8400-e29b-41d4-a716-446655440000"
+        name:
+          type: string
+          example: "latest"
+          enum: [ latest, production, experimental ]
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-31T12:30:00Z"
+
+    Feedback:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "880e8400-e29b-41d4-a716-446655440000"
+        version_id:
+          type: string
+          format: uuid
+          example: "660e8400-e29b-41d4-a716-446655440000"
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        comment:
+          type: string
+          nullable: true
+          example: "Works great!"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-31T12:00:00Z"
+
+    CreatePromptRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: "My First Prompt"
+        description:
+          type: string
+          nullable: true
+          example: "Test prompt for MVP"
+
+    CreatePromptResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+
+    CreateVersionRequest:
+      type: object
+      required:
+        - version
+        - content
+      properties:
+        version:
+          type: string
+          pattern: '^\d+\.\d+\.\d+$'
+          example: "0.0.1"
+        content:
+          type: string
+          example: "Hello {{name}}, you are a helpful assistant."
+        changelog:
+          type: string
+          nullable: true
+          example: "Initial version"
+
+    CreateVersionResponse:
+      type: object
+      properties:
+        version_id:
+          type: string
+          format: uuid
+          example: "660e8400-e29b-41d4-a716-446655440000"
+
+    TagVersionRequest:
+      type: object
+      required:
+        - tag_name
+        - version_id
+      properties:
+        tag_name:
+          type: string
+          example: "latest"
+          enum: [latest, production, experimental]
+        version_id:
+          type: string
+          format: uuid
+          example: "660e8400-e29b-41d4-a716-446655440000"
+
+    SubmitFeedbackRequest:
+      type: object
+      required:
+        - version_id
+        - rating
+      properties:
+        version_id:
+          type: string
+          format: uuid
+          example: "660e8400-e29b-41d4-a716-446655440000"
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        comment:
+          type: string
+          nullable: true
+          example: "Works great!"
+
+    SubmitFeedbackResponse:
+      type: object
+      properties:
+        feedback_id:
+          type: string
+          format: uuid
+          example: "770e8400-e29b-41d4-a716-446655440000"
