@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
-use super::{PromptVersion, Tag, Version};
+use super::{PromptVersion, Tag, Version, PromptType, ContentType};
 
 #[derive(Debug, Clone)]
 pub struct Prompt {
@@ -8,6 +8,7 @@ pub struct Prompt {
     user_id: Uuid,
     name: String,
     description: Option<String>,
+    prompt_type: PromptType,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
     versions: Vec<PromptVersion>,
@@ -20,6 +21,7 @@ impl Prompt {
         user_id: Uuid,
         name: String,
         description: Option<String>,
+        prompt_type: PromptType,
     ) -> Self {
         let now = Utc::now();
         Self {
@@ -27,6 +29,7 @@ impl Prompt {
             user_id,
             name,
             description,
+            prompt_type,
             created_at: now,
             updated_at: now,
             versions: Vec::new(),
@@ -48,6 +51,10 @@ impl Prompt {
 
     pub fn description(&self) -> Option<&str> {
         self.description.as_deref()
+    }
+
+    pub fn prompt_type(&self) -> PromptType {
+        self.prompt_type
     }
 
     pub fn created_at(&self) -> DateTime<Utc> {
@@ -79,6 +86,8 @@ impl Prompt {
         version_id: Uuid,
         version: Version,
         content: String,
+        content_type: ContentType,
+        variables: Option<Vec<String>>,
         changelog: Option<String>,
     ) -> Result<&PromptVersion, String> {
         if self.versions.iter().any(|v| v.version() == version) {
@@ -90,6 +99,8 @@ impl Prompt {
             self.id,
             version,
             content,
+            content_type,
+            variables,
             changelog,
         );
 

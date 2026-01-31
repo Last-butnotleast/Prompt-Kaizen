@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use sha2::{Sha256, Digest as Sha2Digest};
 use uuid::Uuid;
-use super::{Feedback, Version};
+use super::{Feedback, Version, ContentType};
 
 #[derive(Debug, Clone)]
 pub struct PromptVersion {
@@ -10,6 +10,8 @@ pub struct PromptVersion {
     version: Version,
     digest: String,
     content: String,
+    content_type: ContentType,
+    variables: Option<Vec<String>>,
     changelog: Option<String>,
     created_at: DateTime<Utc>,
     feedbacks: Vec<Feedback>,
@@ -21,15 +23,19 @@ impl PromptVersion {
         prompt_id: Uuid,
         version: Version,
         content: String,
+        content_type: ContentType,
+        variables: Option<Vec<String>>,
         changelog: Option<String>,
     ) -> Self {
-        let digest = Self::generate_digest(&content);
+        let digest = Self::generate_digest(&content, content_type);
         Self {
             id,
             prompt_id,
             version,
             digest,
             content,
+            content_type,
+            variables,
             changelog,
             created_at: Utc::now(),
             feedbacks: Vec::new(),
@@ -60,6 +66,14 @@ impl PromptVersion {
         &self.content
     }
 
+    pub fn content_type(&self) -> ContentType {
+        self.content_type
+    }
+
+    pub fn variables(&self) -> Option<&[String]> {
+        self.variables.as_deref()
+    }
+
     pub fn changelog(&self) -> Option<&str> {
         self.changelog.as_deref()
     }
@@ -70,6 +84,20 @@ impl PromptVersion {
 
     pub fn feedbacks(&self) -> &[Feedback] {
         &self.feedbacks
+    }
+
+    pub fn render(&self, context: Option<&serde_json::Value>) -> Result<String, String> {
+        match self.content_type {
+            ContentType::Static => Ok(self.content.clone()),
+            ContentType::Template => {
+                let ctx = context.ok_or("Template requires context")?;
+
+                let handlebars = handlebars::Handlebars::new();
+                handlebars
+                    .render_template(&self.content, ctx)
+                    .map_err(|e| format!("Template rendering failed: {}", e))
+            }
+        }
     }
 
     pub fn add_feedback(
@@ -91,9 +119,14 @@ impl PromptVersion {
         Some(sum as f64 / self.feedbacks.len() as f64)
     }
 
-    fn generate_digest(content: &str) -> String {
+    fn generate_digest(content: &str, content_type: ContentType) -> String {
         let mut hasher = Sha256::new();
         hasher.update(content.as_bytes());
+        let type_suffix = match content_type {
+            ContentType::Static => "static",
+            ContentType::Template => "template",
+        };
+        hasher.update(type_suffix.as_bytes());
         let result = hasher.finalize();
         format!("sha256:{}", hex::encode(result))
     }
@@ -130,5 +163,38 @@ impl PromptVersion {
             feedback.update_comment(c);
         }
         Ok(())
+    }
+
+    pub fn extract_variables(&self) -> Result<Vec<String>, String> {
+        if self.content_type != ContentType::Template {
+            return Ok(Vec::new());
+        }
+
+        let handlebars = handlebars::Handlebars::new();
+        let template = handlebars
+            .render_template(&self.content, &serde_json::json!({}))
+            .err()
+            .and_then(|e| {
+                let error_msg = e.to_string();
+                if error_msg.contains("variable") {
+                    Some(error_msg)
+                } else {
+                    None
+                }
+            });
+
+        let mut vars = std::collections::HashSet::new();
+        let re = regex::Regex::new(r"\{\{([^}]+)\}\}").unwrap();
+
+        for cap in re.captures_iter(&self.content) {
+            if let Some(var) = cap.get(1) {
+                let var_name = var.as_str().trim();
+                if !var_name.starts_with('#') && !var_name.starts_with('/') {
+                    vars.insert(var_name.to_string());
+                }
+            }
+        }
+
+        Ok(vars.into_iter().collect())
     }
 }
