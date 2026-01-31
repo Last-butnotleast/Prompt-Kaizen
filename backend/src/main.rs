@@ -4,7 +4,7 @@ mod infrastructure;
 mod interface;
 
 use std::sync::Arc;
-use infrastructure::repositories::PostgresPromptRepository;
+use infrastructure::repositories::{PostgresPromptRepository, PostgresApiKeyRepository};
 use application::use_cases::*;
 use interface::web::{create_router, handlers::AppState};
 
@@ -28,25 +28,36 @@ async fn main() {
 
     println!("✅ Database connected and migrated");
 
-    let repository = Arc::new(PostgresPromptRepository::new(pool));
+    // Repositories
+    let prompt_repository = Arc::new(PostgresPromptRepository::new(pool.clone()));
+    let api_key_repository = Arc::new(PostgresApiKeyRepository::new(pool.clone()));
 
-    let create_prompt = Arc::new(CreatePrompt::new(repository.clone()));
-    let update_prompt = Arc::new(UpdatePrompt::new(repository.clone()));
-    let get_prompt = Arc::new(GetPrompt::new(repository.clone()));
-    let list_prompts = Arc::new(ListPrompts::new(repository.clone()));
-    let delete_prompt = Arc::new(DeletePrompt::new(repository.clone()));
+    // Prompt use cases
+    let create_prompt = Arc::new(CreatePrompt::new(prompt_repository.clone()));
+    let update_prompt = Arc::new(UpdatePrompt::new(prompt_repository.clone()));
+    let get_prompt = Arc::new(GetPrompt::new(prompt_repository.clone()));
+    let list_prompts = Arc::new(ListPrompts::new(prompt_repository.clone()));
+    let delete_prompt = Arc::new(DeletePrompt::new(prompt_repository.clone()));
 
-    let create_version = Arc::new(CreateVersion::new(repository.clone()));
-    let get_version = Arc::new(GetVersion::new(repository.clone()));
-    let delete_version = Arc::new(DeleteVersion::new(repository.clone()));
+    // Version use cases
+    let create_version = Arc::new(CreateVersion::new(prompt_repository.clone()));
+    let get_version = Arc::new(GetVersion::new(prompt_repository.clone()));
+    let delete_version = Arc::new(DeleteVersion::new(prompt_repository.clone()));
 
-    let create_tag = Arc::new(CreateTag::new(repository.clone()));
-    let delete_tag = Arc::new(DeleteTag::new(repository.clone()));
-    let get_version_by_tag = Arc::new(GetVersionByTag::new(repository.clone()));
+    // Tag use cases
+    let create_tag = Arc::new(CreateTag::new(prompt_repository.clone()));
+    let delete_tag = Arc::new(DeleteTag::new(prompt_repository.clone()));
+    let get_version_by_tag = Arc::new(GetVersionByTag::new(prompt_repository.clone()));
 
-    let submit_feedback = Arc::new(SubmitFeedback::new(repository.clone()));
-    let update_feedback = Arc::new(UpdateFeedback::new(repository.clone()));
-    let delete_feedback = Arc::new(DeleteFeedback::new(repository.clone()));
+    // Feedback use cases
+    let submit_feedback = Arc::new(SubmitFeedback::new(prompt_repository.clone()));
+    let update_feedback = Arc::new(UpdateFeedback::new(prompt_repository.clone()));
+    let delete_feedback = Arc::new(DeleteFeedback::new(prompt_repository.clone()));
+
+    // API Key use cases
+    let create_api_key = Arc::new(CreateApiKey::new(api_key_repository.clone()));
+    let list_api_keys = Arc::new(ListApiKeys::new(api_key_repository.clone()));
+    let delete_api_key = Arc::new(DeleteApiKey::new(api_key_repository.clone()));
 
     let app_state = Arc::new(AppState {
         create_prompt,
@@ -63,6 +74,10 @@ async fn main() {
         submit_feedback,
         update_feedback,
         delete_feedback,
+        create_api_key,
+        list_api_keys,
+        delete_api_key,
+        api_key_repository,
     });
 
     let app = create_router(app_state);

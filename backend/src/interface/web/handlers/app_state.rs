@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use crate::application::use_cases::*;
+use crate::application::api_key_repository::ApiKeyRepository;
 
 pub struct AppState {
     pub create_prompt: Arc<CreatePrompt>,
@@ -19,4 +20,12 @@ pub struct AppState {
     pub submit_feedback: Arc<SubmitFeedback>,
     pub update_feedback: Arc<UpdateFeedback>,
     pub delete_feedback: Arc<DeleteFeedback>,
+
+    // API Key use cases
+    pub create_api_key: Arc<CreateApiKey>,
+    pub list_api_keys: Arc<ListApiKeys>,
+    pub delete_api_key: Arc<DeleteApiKey>,
+
+    // Repository for auth
+    pub api_key_repository: Arc<dyn ApiKeyRepository>,
 }

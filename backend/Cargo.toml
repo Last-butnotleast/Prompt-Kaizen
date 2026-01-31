@@ -16,3 +16,4 @@ serde = { version = "1.0.228", features = ["derive"] }
 tower-http = { version = "0.6.8", features = ["cors"] }
 sqlx = { version = "0.8.6", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono"] }
 dotenvy = "0.15"
+rand = "0.8.5"

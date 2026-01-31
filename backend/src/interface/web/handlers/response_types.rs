@@ -1,5 +1,6 @@
 use serde::Serialize;
 use chrono::{DateTime, Utc};
+use crate::domain::api_key::ApiKey;
 use crate::domain::prompt::{Prompt, PromptVersion, Tag, Feedback};
 
 #[derive(Serialize)]
@@ -90,6 +91,29 @@ impl From<&Feedback> for FeedbackResponse {
             rating: feedback.rating(),
             comment: feedback.comment().map(|s| s.to_string()),
             created_at: feedback.created_at(),
+        }
+    }
+}
+
+#[derive(Serialize)]
+pub struct ApiKeyResponse {
+    pub id: String,
+    pub name: String,
+    pub key_prefix: String,
+    pub last_used_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+    pub is_active: bool,
+}
+
+impl From<&ApiKey> for ApiKeyResponse {
+    fn from(api_key: &ApiKey) -> Self {
+        Self {
+            id: api_key.id().to_string(),
+            name: api_key.name().to_string(),
+            key_prefix: api_key.key_prefix().to_string(),
+            last_used_at: api_key.last_used_at(),
+            created_at: api_key.created_at(),
+            is_active: api_key.is_active(),
         }
     }
 }

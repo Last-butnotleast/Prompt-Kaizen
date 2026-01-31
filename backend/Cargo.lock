@@ -111,6 +111,7 @@ dependencies = [
  "dotenvy",
  "hex",
  "http",
+ "rand",
  "serde",
  "sha2 0.11.0-rc.4",
  "sqlx",
