@@ -11,8 +11,8 @@ apiClient.use({
     const {
       data: { session },
     } = await supabase.auth.getSession();
-    if (session?.user?.id) {
-      request.headers.set("x-user-id", session.user.id);
+    if (session?.access_token) {
+      request.headers.set("Authorization", `Bearer ${session.access_token}`);
     }
     return request;
   },
