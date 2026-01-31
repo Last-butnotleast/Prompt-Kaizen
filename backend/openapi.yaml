@@ -700,6 +700,7 @@ components:
         - content
         - created_at
         - feedback_count
+        - feedback
       properties:
         id:
           type: string
@@ -734,6 +735,11 @@ components:
           type: integer
           example: 10
           description: "Number of feedback submissions"
+        feedback:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeedbackResponse'
+          description: "List of feedback for this version"
 
     TagResponse:
       type: object

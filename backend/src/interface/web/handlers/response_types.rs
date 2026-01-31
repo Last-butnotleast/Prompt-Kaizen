@@ -25,6 +25,7 @@ pub struct VersionResponse {
     pub created_at: DateTime<Utc>,
     pub average_rating: Option<f64>,
     pub feedback_count: usize,
+    pub feedback: Vec<FeedbackResponse>,
 }
 
 #[derive(Serialize)]
@@ -69,6 +70,7 @@ impl From<&PromptVersion> for VersionResponse {
             created_at: version.created_at(),
             average_rating: version.average_rating(),
             feedback_count: version.feedbacks().len(),
+            feedback: version.feedbacks().iter().map(FeedbackResponse::from).collect(),
         }
     }
 }
