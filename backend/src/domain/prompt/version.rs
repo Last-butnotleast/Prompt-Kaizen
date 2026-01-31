@@ -1,13 +1,13 @@
 use chrono::{DateTime, Utc};
 use sha2::{Sha256, Digest as Sha2Digest};
 use uuid::Uuid;
-use super::Feedback;
+use super::{Feedback, Version};
 
 #[derive(Debug, Clone)]
 pub struct PromptVersion {
     id: Uuid,
     prompt_id: Uuid,
-    version: String,
+    version: Version,
     digest: String,
     content: String,
     changelog: Option<String>,
@@ -19,7 +19,7 @@ impl PromptVersion {
     pub fn new(
         id: Uuid,
         prompt_id: Uuid,
-        version: String,
+        version: Version,
         content: String,
         changelog: Option<String>,
     ) -> Self {
@@ -44,8 +44,12 @@ impl PromptVersion {
         self.prompt_id
     }
 
-    pub fn version(&self) -> &str {
-        &self.version
+    pub fn version(&self) -> Version {
+        self.version
+    }
+
+    pub fn version_string(&self) -> String {
+        self.version.to_string()
     }
 
     pub fn digest(&self) -> &str {

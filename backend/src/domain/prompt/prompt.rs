@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
-use super::{PromptVersion, Tag};
+use super::{PromptVersion, Tag, Version};
 
 #[derive(Debug, Clone)]
 pub struct Prompt {
@@ -77,7 +77,7 @@ impl Prompt {
     pub fn add_version(
         &mut self,
         version_id: Uuid,
-        version: String,
+        version: Version,
         content: String,
         changelog: Option<String>,
     ) -> Result<&PromptVersion, String> {
@@ -99,8 +99,8 @@ impl Prompt {
         Ok(self.versions.last().unwrap())
     }
 
-    pub fn find_version(&self, version: &str) -> Option<&PromptVersion> {
-        self.versions.iter().find(|v| v.version() == version)
+    pub fn find_version(&self, version: &Version) -> Option<&PromptVersion> {
+        self.versions.iter().find(|v| v.version() == *version)
     }
 
     pub fn find_version_by_id(&self, id: Uuid) -> Option<&PromptVersion> {
@@ -132,7 +132,6 @@ impl Prompt {
         self.tags.iter().find(|t| t.name() == tag_name)
     }
 
-    // Update operations
     pub fn update_name(&mut self, name: String) -> Result<(), String> {
         if name.trim().is_empty() {
             return Err("Name cannot be empty".to_string());
@@ -147,7 +146,6 @@ impl Prompt {
         self.updated_at = Utc::now();
     }
 
-    // Delete operations
     pub fn delete_version(&mut self, version_id: Uuid) -> Result<(), String> {
         let initial_len = self.versions.len();
         self.versions.retain(|v| v.id() != version_id);
@@ -156,7 +154,6 @@ impl Prompt {
             return Err("Version not found".to_string());
         }
 
-        // Remove tags pointing to this version
         self.tags.retain(|t| t.version_id() != version_id);
         self.updated_at = Utc::now();
         Ok(())
@@ -174,7 +171,6 @@ impl Prompt {
         Ok(())
     }
 
-    // Access feedback through aggregate
     pub fn update_feedback(
         &mut self,
         version_id: Uuid,
