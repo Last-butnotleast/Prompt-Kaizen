@@ -42,4 +42,11 @@ impl PromptRepository for InMemoryPromptRepository {
             .cloned()
             .collect())
     }
+
+    async fn delete(&self, id: &str) -> Result<(), String> {
+        let mut store = self.store.write().await;
+        store.remove(id)
+            .ok_or_else(|| "Prompt not found".to_string())?;
+        Ok(())
+    }
 }
