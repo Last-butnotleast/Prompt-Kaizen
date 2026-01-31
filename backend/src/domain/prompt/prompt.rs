@@ -50,6 +50,10 @@ impl Prompt {
         &self.versions
     }
 
+    pub fn versions_mut(&mut self) -> &mut Vec<PromptVersion> {
+        &mut self.versions
+    }
+
     pub fn tags(&self) -> &[Tag] {
         &self.tags
     }
