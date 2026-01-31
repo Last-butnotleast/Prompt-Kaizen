@@ -1,5 +1,5 @@
 use crate::application::PromptRepository;
-use crate::domain::prompt::Prompt;
+use crate::domain::prompt::{Prompt, PromptType};
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -17,9 +17,10 @@ impl CreatePrompt {
         user_id: Uuid,
         name: String,
         description: Option<String>,
+        prompt_type: PromptType,
     ) -> Result<Uuid, String> {
         let id = Uuid::new_v4();
-        let prompt = Prompt::new(id, user_id, name, description);
+        let prompt = Prompt::new(id, user_id, name, description, prompt_type);
         self.repository.save(&prompt).await?;
         Ok(id)
     }

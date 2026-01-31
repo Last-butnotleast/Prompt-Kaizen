@@ -1,5 +1,5 @@
 use crate::application::PromptRepository;
-use crate::domain::prompt::Version;
+use crate::domain::prompt::{Version, ContentType};
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -18,6 +18,8 @@ impl CreateVersion {
         user_id: Uuid,
         version: String,
         content: String,
+        content_type: ContentType,
+        variables: Option<Vec<String>>,
         changelog: Option<String>,
     ) -> Result<Uuid, String> {
         let mut prompt = self.repository
@@ -27,7 +29,7 @@ impl CreateVersion {
 
         let version = Version::from_str(&version)?;
         let version_id = Uuid::new_v4();
-        prompt.add_version(version_id, version, content, changelog)?;
+        prompt.add_version(version_id, version, content, content_type, variables, changelog)?;
         self.repository.save(&prompt).await?;
         Ok(version_id)
     }
