@@ -28,33 +28,29 @@ async fn main() {
 
     println!("✅ Database connected and migrated");
 
-    // Repositories
     let prompt_repository = Arc::new(PostgresPromptRepository::new(pool.clone()));
     let api_key_repository = Arc::new(PostgresApiKeyRepository::new(pool.clone()));
 
-    // Prompt use cases
     let create_prompt = Arc::new(CreatePrompt::new(prompt_repository.clone()));
     let update_prompt = Arc::new(UpdatePrompt::new(prompt_repository.clone()));
     let get_prompt = Arc::new(GetPrompt::new(prompt_repository.clone()));
     let list_prompts = Arc::new(ListPrompts::new(prompt_repository.clone()));
     let delete_prompt = Arc::new(DeletePrompt::new(prompt_repository.clone()));
 
-    // Version use cases
     let create_version = Arc::new(CreateVersion::new(prompt_repository.clone()));
     let get_version = Arc::new(GetVersion::new(prompt_repository.clone()));
     let delete_version = Arc::new(DeleteVersion::new(prompt_repository.clone()));
+    let render_version = Arc::new(RenderVersion::new(prompt_repository.clone()));
+    let render_version_by_tag = Arc::new(RenderVersionByTag::new(prompt_repository.clone()));
 
-    // Tag use cases
     let create_tag = Arc::new(CreateTag::new(prompt_repository.clone()));
     let delete_tag = Arc::new(DeleteTag::new(prompt_repository.clone()));
     let get_version_by_tag = Arc::new(GetVersionByTag::new(prompt_repository.clone()));
 
-    // Feedback use cases
     let submit_feedback = Arc::new(SubmitFeedback::new(prompt_repository.clone()));
     let update_feedback = Arc::new(UpdateFeedback::new(prompt_repository.clone()));
     let delete_feedback = Arc::new(DeleteFeedback::new(prompt_repository.clone()));
 
-    // API Key use cases
     let create_api_key = Arc::new(CreateApiKey::new(api_key_repository.clone()));
     let list_api_keys = Arc::new(ListApiKeys::new(api_key_repository.clone()));
     let delete_api_key = Arc::new(DeleteApiKey::new(api_key_repository.clone()));
@@ -68,6 +64,8 @@ async fn main() {
         create_version,
         get_version,
         delete_version,
+        render_version,
+        render_version_by_tag,
         create_tag,
         delete_tag,
         get_version_by_tag,

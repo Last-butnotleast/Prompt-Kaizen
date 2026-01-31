@@ -12,6 +12,8 @@ pub struct AppState {
     pub create_version: Arc<CreateVersion>,
     pub get_version: Arc<GetVersion>,
     pub delete_version: Arc<DeleteVersion>,
+    pub render_version: Arc<RenderVersion>,
+    pub render_version_by_tag: Arc<RenderVersionByTag>,
 
     pub create_tag: Arc<CreateTag>,
     pub delete_tag: Arc<DeleteTag>,
@@ -21,11 +23,9 @@ pub struct AppState {
     pub update_feedback: Arc<UpdateFeedback>,
     pub delete_feedback: Arc<DeleteFeedback>,
 
-    // API Key use cases
     pub create_api_key: Arc<CreateApiKey>,
     pub list_api_keys: Arc<ListApiKeys>,
     pub delete_api_key: Arc<DeleteApiKey>,
 
-    // Repository for auth
     pub api_key_repository: Arc<dyn ApiKeyRepository>,
 }

@@ -11,11 +11,14 @@ use crate::interface::web::handlers::{
     auth::extract_user_id_with_api_key,
     uuid_helpers::parse_uuid,
 };
+use crate::domain::prompt::ContentType;
 
 #[derive(Deserialize)]
 pub struct CreateVersionRequest {
     pub version: String,
     pub content: String,
+    pub content_type: String,
+    pub variables: Option<Vec<String>>,
     pub changelog: Option<String>,
 }
 
@@ -33,9 +36,23 @@ pub async fn create_version(
     let user_id = extract_user_id_with_api_key(&headers, state.api_key_repository.clone()).await?;
     let prompt_uuid = parse_uuid(&prompt_id, "prompt_id")?;
 
+    let content_type = match payload.content_type.as_str() {
+        "static" => ContentType::Static,
+        "template" => ContentType::Template,
+        _ => return Err((StatusCode::BAD_REQUEST, "Invalid content_type. Must be 'static' or 'template'".to_string())),
+    };
+
     let version_id = state
         .create_version
-        .execute(prompt_uuid, user_id, payload.version, payload.content, payload.changelog)
+        .execute(
+            prompt_uuid,
+            user_id,
+            payload.version,
+            payload.content,
+            content_type,
+            payload.variables,
+            payload.changelog
+        )
         .await
         .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
 

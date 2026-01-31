@@ -1,7 +1,7 @@
 use serde::Serialize;
 use chrono::{DateTime, Utc};
 use crate::domain::api_key::ApiKey;
-use crate::domain::prompt::{Prompt, PromptVersion, Tag, Feedback};
+use crate::domain::prompt::{Prompt, PromptVersion, Tag, Feedback, PromptType, ContentType};
 
 #[derive(Serialize)]
 pub struct PromptResponse {
@@ -9,6 +9,7 @@ pub struct PromptResponse {
     pub user_id: String,
     pub name: String,
     pub description: Option<String>,
+    pub prompt_type: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub versions: Vec<VersionResponse>,
@@ -21,6 +22,8 @@ pub struct VersionResponse {
     pub version: String,
     pub digest: String,
     pub content: String,
+    pub content_type: String,
+    pub variables: Option<Vec<String>>,
     pub changelog: Option<String>,
     pub created_at: DateTime<Utc>,
     pub average_rating: Option<f64>,
@@ -46,11 +49,17 @@ pub struct FeedbackResponse {
 
 impl From<&Prompt> for PromptResponse {
     fn from(prompt: &Prompt) -> Self {
+        let prompt_type = match prompt.prompt_type() {
+            PromptType::System => "system",
+            PromptType::User => "user",
+        };
+
         Self {
             id: prompt.id().to_string(),
             user_id: prompt.user_id().to_string(),
             name: prompt.name().to_string(),
             description: prompt.description().map(|s| s.to_string()),
+            prompt_type: prompt_type.to_string(),
             created_at: prompt.created_at(),
             updated_at: prompt.updated_at(),
             versions: prompt.versions().iter().map(VersionResponse::from).collect(),
@@ -61,11 +70,18 @@ impl From<&Prompt> for PromptResponse {
 
 impl From<&PromptVersion> for VersionResponse {
     fn from(version: &PromptVersion) -> Self {
+        let content_type = match version.content_type() {
+            ContentType::Static => "static",
+            ContentType::Template => "template",
+        };
+
         Self {
             id: version.id().to_string(),
             version: version.version().to_string(),
             digest: version.digest().to_string(),
             content: version.content().to_string(),
+            content_type: content_type.to_string(),
+            variables: version.variables().map(|v| v.to_vec()),
             changelog: version.changelog().map(|s| s.to_string()),
             created_at: version.created_at(),
             average_rating: version.average_rating(),
