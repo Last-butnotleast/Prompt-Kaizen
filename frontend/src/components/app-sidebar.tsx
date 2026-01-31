@@ -1,4 +1,4 @@
-import { Home, Sparkles, MessageSquare } from "lucide-react";
+import { Home, Sparkles, MessageSquare, Settings } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import type { User } from "@supabase/supabase-js";
 import supabase from "@/lib/supabase";
@@ -57,6 +57,14 @@ export function AppSidebar({ user }: AppSidebarProps) {
                 <SidebarMenuButton>
                   <MessageSquare className="h-4 w-4" />
                   <span>Feedback</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to="/settings">
+                    <Settings className="h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

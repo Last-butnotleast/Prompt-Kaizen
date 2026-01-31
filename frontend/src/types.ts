@@ -23,3 +23,7 @@ export type SubmitFeedbackResponse =
   components["schemas"]["SubmitFeedbackResponse"];
 export type UpdateFeedbackRequest =
   components["schemas"]["UpdateFeedbackRequest"];
+export type ApiKey = components["schemas"]["ApiKeyResponse"];
+export type CreateApiKeyRequest = components["schemas"]["CreateApiKeyRequest"];
+export type CreateApiKeyResponse =
+  components["schemas"]["CreateApiKeyResponse"];

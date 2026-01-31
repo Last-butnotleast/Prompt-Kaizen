@@ -162,6 +162,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api-keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all API keys for the authenticated user */
+        get: operations["listApiKeys"];
+        put?: never;
+        /** Create a new API key */
+        post: operations["createApiKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api-keys/{api_key_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an API key */
+        delete: operations["deleteApiKey"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -173,8 +208,8 @@ export interface components {
              */
             id: string;
             /**
-             * @description Owner of the prompt
-             * @example user-123
+             * Format: uuid
+             * @example 660e8400-e29b-41d4-a716-446655440001
              */
             user_id: string;
             /** @example My First Prompt */
@@ -263,6 +298,32 @@ export interface components {
              */
             created_at: string;
         };
+        ApiKeyResponse: {
+            /**
+             * Format: uuid
+             * @example 990e8400-e29b-41d4-a716-446655440000
+             */
+            id: string;
+            /** @example Production n8n Integration */
+            name: string;
+            /**
+             * @description First few characters of the key for identification
+             * @example pk_live_abc123
+             */
+            key_prefix: string;
+            /**
+             * Format: date-time
+             * @example 2024-01-31T14:30:00Z
+             */
+            last_used_at?: string | null;
+            /**
+             * Format: date-time
+             * @example 2024-01-31T12:00:00Z
+             */
+            created_at: string;
+            /** @example true */
+            is_active: boolean;
+        };
         CreatePromptRequest: {
             /** @example My First Prompt */
             name: string;
@@ -329,6 +390,27 @@ export interface components {
             rating?: number | null;
             /** @example Updated comment */
             comment?: string | null;
+        };
+        CreateApiKeyRequest: {
+            /**
+             * @description Friendly name to identify this API key
+             * @example Production n8n Integration
+             */
+            name: string;
+        };
+        CreateApiKeyResponse: {
+            /**
+             * Format: uuid
+             * @example 990e8400-e29b-41d4-a716-446655440000
+             */
+            id: string;
+            /**
+             * @description The actual API key - only shown once!
+             * @example pk_live_1234567890abcdef1234567890abcdef
+             */
+            api_key: string;
+            /** @example Save this API key securely. You won't be able to see it again. */
+            message: string;
         };
     };
     responses: never;
@@ -948,6 +1030,124 @@ export interface operations {
                 };
             };
             /** @description Feedback not found or prompt not owned by user */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+        };
+    };
+    listApiKeys: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of user's API keys */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyResponse"][];
+                };
+            };
+            /** @description Unauthorized - Missing or invalid user ID */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+        };
+    };
+    createApiKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateApiKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description API key created successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateApiKeyResponse"];
+                };
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            /** @description Unauthorized - Missing or invalid user ID */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+        };
+    };
+    deleteApiKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                api_key_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description API key deleted successfully */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized - Missing or invalid user ID */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            /** @description API key not found or not owned by user */
             404: {
                 headers: {
                     [name: string]: unknown;
