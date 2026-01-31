@@ -1,11 +1,14 @@
 -- Prompts table
 CREATE TABLE prompts (
                          id UUID PRIMARY KEY,
+                         user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
                          name VARCHAR(255) NOT NULL,
                          description TEXT,
                          created_at TIMESTAMPTZ NOT NULL,
                          updated_at TIMESTAMPTZ NOT NULL
 );
+
+CREATE INDEX idx_prompts_user_id ON prompts(user_id);
 
 -- Versions table
 CREATE TABLE versions (
