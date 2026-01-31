@@ -551,6 +551,14 @@ components:
   schemas:
     PromptResponse:
       type: object
+      required:
+        - id
+        - user_id
+        - name
+        - created_at
+        - updated_at
+        - versions
+        - tags
       properties:
         id:
           type: string
@@ -586,6 +594,13 @@ components:
 
     VersionResponse:
       type: object
+      required:
+        - id
+        - version
+        - digest
+        - content
+        - created_at
+        - feedback_count
       properties:
         id:
           type: string
@@ -615,12 +630,19 @@ components:
           format: float
           nullable: true
           example: 4.5
+          description: "Average rating from all feedback"
         feedback_count:
           type: integer
           example: 10
+          description: "Number of feedback submissions"
 
     TagResponse:
       type: object
+      required:
+        - id
+        - name
+        - version_id
+        - updated_at
       properties:
         id:
           type: string
@@ -638,6 +660,31 @@ components:
           format: date-time
           example: "2024-01-31T12:30:00Z"
 
+    FeedbackResponse:
+      type: object
+      required:
+        - id
+        - rating
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "880e8400-e29b-41d4-a716-446655440000"
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        comment:
+          type: string
+          nullable: true
+          example: "Works great!"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-31T12:00:00Z"
+
     CreatePromptRequest:
       type: object
       required:
@@ -646,6 +693,7 @@ components:
         name:
           type: string
           example: "My First Prompt"
+          minLength: 1
         description:
           type: string
           nullable: true
@@ -653,6 +701,8 @@ components:
 
     CreatePromptResponse:
       type: object
+      required:
+        - id
       properties:
         id:
           type: string
@@ -666,6 +716,7 @@ components:
           type: string
           nullable: true
           example: "Updated Prompt Name"
+          minLength: 1
         description:
           type: string
           nullable: true
@@ -684,6 +735,7 @@ components:
         content:
           type: string
           example: "Hello {{name}}, you are a helpful assistant."
+          minLength: 1
         changelog:
           type: string
           nullable: true
@@ -691,6 +743,8 @@ components:
 
     CreateVersionResponse:
       type: object
+      required:
+        - version_id
       properties:
         version_id:
           type: string
@@ -706,6 +760,7 @@ components:
         tag_name:
           type: string
           example: "latest"
+          minLength: 1
         version_id:
           type: string
           format: uuid
@@ -733,6 +788,8 @@ components:
 
     SubmitFeedbackResponse:
       type: object
+      required:
+        - feedback_id
       properties:
         feedback_id:
           type: string
