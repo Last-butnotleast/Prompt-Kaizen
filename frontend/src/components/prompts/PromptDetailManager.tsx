@@ -6,18 +6,24 @@ import {
 } from "@/api/hooks/prompts";
 import { useCreateVersion, useDeleteVersion } from "@/api/hooks/versions";
 import { useTagVersion, useDeleteTag } from "@/api/hooks/tags";
-import { useSubmitFeedback } from "@/api/hooks/feedback";
+import { useSubmitFeedback, useDeleteFeedback } from "@/api/hooks/feedback";
 import { PromptDetailDisplay } from "./PromptDetailDisplay";
 import type {
   UpdatePromptRequest,
   CreateVersionRequest,
   TagVersionRequest,
   SubmitFeedbackRequest,
+  Feedback,
 } from "@/types";
+import { useMemo, useState } from "react";
 
 export function PromptDetailManager() {
   const { promptId } = useParams({ from: "/prompts/$promptId" });
   const navigate = useNavigate();
+  const [deletingFeedback, setDeletingFeedback] = useState<{
+    versionId: string;
+    feedbackId: string;
+  } | null>(null);
 
   const { data: prompt, isLoading, error } = useGetPrompt(promptId);
   const updatePrompt = useUpdatePrompt(promptId);
@@ -27,6 +33,19 @@ export function PromptDetailManager() {
   const tagVersion = useTagVersion(promptId);
   const deleteTag = useDeleteTag(promptId);
   const submitFeedback = useSubmitFeedback(promptId);
+  const deleteFeedbackMutation = useDeleteFeedback(
+    promptId,
+    deletingFeedback?.versionId || "",
+  );
+
+  const versionFeedback = useMemo(() => {
+    if (!prompt?.versions) return {};
+    const feedbackMap: Record<string, Feedback[]> = {};
+    prompt.versions.forEach((version) => {
+      feedbackMap[version.id] = version.feedback || [];
+    });
+    return feedbackMap;
+  }, [prompt]);
 
   const handleUpdatePrompt = async (data: UpdatePromptRequest) => {
     await updatePrompt.mutateAsync(data);
@@ -57,6 +76,15 @@ export function PromptDetailManager() {
     await submitFeedback.mutateAsync(data);
   };
 
+  const handleDeleteFeedback = async (
+    versionId: string,
+    feedbackId: string,
+  ) => {
+    setDeletingFeedback({ versionId, feedbackId });
+    await deleteFeedbackMutation.mutateAsync(feedbackId);
+    setDeletingFeedback(null);
+  };
+
   const handleBack = () => {
     navigate({ to: "/prompts" });
   };
@@ -73,11 +101,14 @@ export function PromptDetailManager() {
       onTagVersion={handleTagVersion}
       onDeleteTag={handleDeleteTag}
       onSubmitFeedback={handleSubmitFeedback}
+      onDeleteFeedback={handleDeleteFeedback}
       onBack={handleBack}
       isUpdating={updatePrompt.isPending}
       isDeleting={deletePrompt.isPending}
       isCreatingVersion={createVersion.isPending}
       isTagging={tagVersion.isPending}
+      isSubmittingFeedback={submitFeedback.isPending}
+      versionFeedback={versionFeedback}
     />
   );
 }

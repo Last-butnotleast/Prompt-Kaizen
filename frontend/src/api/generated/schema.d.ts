@@ -262,6 +262,8 @@ export interface components {
              * @example 10
              */
             feedback_count: number;
+            /** @description List of feedback for this version */
+            feedback: components["schemas"]["FeedbackResponse"][];
         };
         TagResponse: {
             /**
