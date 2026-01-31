@@ -2,11 +2,11 @@ use crate::application::PromptRepository;
 use crate::domain::prompt::Prompt;
 use std::sync::Arc;
 
-pub struct CreatePromptUseCase {
+pub struct CreatePrompt {
     repository: Arc<dyn PromptRepository>,
 }
 
-impl CreatePromptUseCase {
+impl CreatePrompt {
     pub fn new(repository: Arc<dyn PromptRepository>) -> Self {
         Self { repository }
     }
@@ -17,11 +17,8 @@ impl CreatePromptUseCase {
         description: Option<String>,
     ) -> Result<String, String> {
         let id = uuid::Uuid::new_v4().to_string();
-
         let prompt = Prompt::new(id.clone(), name, description);
-
         self.repository.save(&prompt).await?;
-
         Ok(id)
     }
 }

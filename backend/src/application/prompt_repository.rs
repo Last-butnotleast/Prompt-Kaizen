@@ -7,4 +7,5 @@ pub trait PromptRepository: Send + Sync {
     async fn find_by_id(&self, id: &str) -> Result<Option<Prompt>, String>;
     async fn find_all(&self) -> Result<Vec<Prompt>, String>;
     async fn find_by_tag(&self, tag_name: &str) -> Result<Vec<Prompt>, String>;
+    async fn delete(&self, id: &str) -> Result<(), String>;
 }

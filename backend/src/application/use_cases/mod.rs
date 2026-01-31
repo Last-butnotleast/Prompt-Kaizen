@@ -1,9 +1,9 @@
-pub mod create_prompt;
-pub mod create_version;
-pub mod manage_tags;
-pub mod submit_feedback;
+pub mod prompt;
+pub mod version;
+pub mod tag;
+pub mod feedback;
 
-pub use create_prompt::CreatePromptUseCase;
-pub use create_version::CreateVersionUseCase;
-pub use manage_tags::ManageTagsUseCase;
-pub use submit_feedback::SubmitFeedbackUseCase;
+pub use prompt::{CreatePrompt, UpdatePrompt, GetPrompt, ListPrompts, DeletePrompt};
+pub use version::{CreateVersion, DeleteVersion, GetVersion};
+pub use tag::{CreateTag, DeleteTag, GetVersionByTag};
+pub use feedback::{SubmitFeedback, UpdateFeedback, DeleteFeedback};
