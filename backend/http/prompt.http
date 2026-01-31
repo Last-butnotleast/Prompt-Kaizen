@@ -1,0 +1,37 @@
+### Create Prompt
+POST http://localhost:3000/prompts
+Content-Type: application/json
+
+{
+  "name": "My First Prompt",
+  "description": "Test prompt for MVP"
+}
+
+### Create Version (replace {prompt_id} with actual ID from above)
+POST http://localhost:3000/prompts/41ad719f-18c5-4e81-9c51-9a21224f5101/versions
+Content-Type: application/json
+
+{
+  "version": "0.0.1",
+  "content": "Hello {{name}\\}, you are a helpful assistant.",
+  "changelog": "Initial version"
+}
+
+### Tag Version (replace {prompt_id} and version_id)
+POST http://localhost:3000/prompts/41ad719f-18c5-4e81-9c51-9a21224f5101/tags
+Content-Type: application/json
+
+{
+  "tag_name": "latest",
+  "version_id": "0a8e5502-84da-495c-82b6-ce0a4ca3226e"
+}
+
+### Submit Feedback (replace {prompt_id} and version_id)
+POST http://localhost:3000/prompts/41ad719f-18c5-4e81-9c51-9a21224f5101/feedback
+Content-Type: application/json
+
+{
+  "version_id": "0a8e5502-84da-495c-82b6-ce0a4ca3226e",
+  "rating": 5,
+  "comment": "Works great!"
+}
