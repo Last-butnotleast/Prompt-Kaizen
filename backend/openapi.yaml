@@ -38,6 +38,101 @@ paths:
             text/plain:
               schema:
                 type: string
+    get:
+      summary: List all prompts
+      operationId: listPrompts
+      tags:
+        - Prompts
+      responses:
+        '200':
+          description: List of prompts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PromptResponse'
+        '500':
+          description: Internal server error
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /prompts/{prompt_id}:
+    get:
+      summary: Get a specific prompt
+      operationId: getPrompt
+      tags:
+        - Prompts
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Prompt details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromptResponse'
+        '404':
+          description: Prompt not found
+          content:
+            text/plain:
+              schema:
+                type: string
+    put:
+      summary: Update a prompt
+      operationId: updatePrompt
+      tags:
+        - Prompts
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePromptRequest'
+      responses:
+        '200':
+          description: Prompt updated successfully
+        '400':
+          description: Bad request
+          content:
+            text/plain:
+              schema:
+                type: string
+    delete:
+      summary: Delete a prompt
+      operationId: deletePrompt
+      tags:
+        - Prompts
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Prompt deleted successfully
+        '404':
+          description: Prompt not found
+          content:
+            text/plain:
+              schema:
+                type: string
 
   /prompts/{prompt_id}/versions:
     post:
@@ -72,6 +167,66 @@ paths:
               schema:
                 type: string
 
+  /prompts/{prompt_id}/versions/{version_id}:
+    get:
+      summary: Get a specific version
+      operationId: getVersion
+      tags:
+        - Versions
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: version_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Version details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionResponse'
+        '404':
+          description: Version not found
+          content:
+            text/plain:
+              schema:
+                type: string
+    delete:
+      summary: Delete a version
+      operationId: deleteVersion
+      tags:
+        - Versions
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: version_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Version deleted successfully
+        '404':
+          description: Version not found
+          content:
+            text/plain:
+              schema:
+                type: string
+
   /prompts/{prompt_id}/tags:
     post:
       summary: Tag a specific version
@@ -96,6 +251,66 @@ paths:
           description: Version tagged successfully
         '400':
           description: Bad request
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /prompts/{prompt_id}/tags/{tag_name}:
+    delete:
+      summary: Delete a tag
+      operationId: deleteTag
+      tags:
+        - Tags
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: tag_name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Tag deleted successfully
+        '404':
+          description: Tag not found
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /prompts/{prompt_id}/tags/{tag_name}/version:
+    get:
+      summary: Get version by tag
+      operationId: getVersionByTag
+      tags:
+        - Tags
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: tag_name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Version details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionResponse'
+        '404':
+          description: Tag or version not found
           content:
             text/plain:
               schema:
@@ -134,9 +349,83 @@ paths:
               schema:
                 type: string
 
+  /prompts/{prompt_id}/versions/{version_id}/feedback/{feedback_id}:
+    put:
+      summary: Update feedback
+      operationId: updateFeedback
+      tags:
+        - Feedback
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: version_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: feedback_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFeedbackRequest'
+      responses:
+        '200':
+          description: Feedback updated successfully
+        '400':
+          description: Bad request
+          content:
+            text/plain:
+              schema:
+                type: string
+    delete:
+      summary: Delete feedback
+      operationId: deleteFeedback
+      tags:
+        - Feedback
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: version_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: feedback_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Feedback deleted successfully
+        '404':
+          description: Feedback not found
+          content:
+            text/plain:
+              schema:
+                type: string
+
 components:
   schemas:
-    Prompt:
+    PromptResponse:
       type: object
       properties:
         id:
@@ -161,23 +450,19 @@ components:
         versions:
           type: array
           items:
-            $ref: '#/components/schemas/PromptVersion'
+            $ref: '#/components/schemas/VersionResponse'
         tags:
           type: array
           items:
-            $ref: '#/components/schemas/Tag'
+            $ref: '#/components/schemas/TagResponse'
 
-    PromptVersion:
+    VersionResponse:
       type: object
       properties:
         id:
           type: string
           format: uuid
           example: "660e8400-e29b-41d4-a716-446655440000"
-        prompt_id:
-          type: string
-          format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
         version:
           type: string
           pattern: '^\d+\.\d+\.\d+$'
@@ -197,59 +482,33 @@ components:
           type: string
           format: date-time
           example: "2024-01-31T12:00:00Z"
-        feedbacks:
-          type: array
-          items:
-            $ref: '#/components/schemas/Feedback'
+        average_rating:
+          type: number
+          format: float
+          nullable: true
+          example: 4.5
+        feedback_count:
+          type: integer
+          example: 10
 
-    Tag:
+    TagResponse:
       type: object
       properties:
         id:
           type: string
           format: uuid
           example: "770e8400-e29b-41d4-a716-446655440000"
-        prompt_id:
+        name:
           type: string
-          format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
+          example: "latest"
         version_id:
           type: string
           format: uuid
           example: "660e8400-e29b-41d4-a716-446655440000"
-        name:
-          type: string
-          example: "latest"
-          enum: [ latest, production, experimental ]
         updated_at:
           type: string
           format: date-time
           example: "2024-01-31T12:30:00Z"
-
-    Feedback:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          example: "880e8400-e29b-41d4-a716-446655440000"
-        version_id:
-          type: string
-          format: uuid
-          example: "660e8400-e29b-41d4-a716-446655440000"
-        rating:
-          type: integer
-          minimum: 1
-          maximum: 5
-          example: 5
-        comment:
-          type: string
-          nullable: true
-          example: "Works great!"
-        created_at:
-          type: string
-          format: date-time
-          example: "2024-01-31T12:00:00Z"
 
     CreatePromptRequest:
       type: object
@@ -271,6 +530,18 @@ components:
           type: string
           format: uuid
           example: "550e8400-e29b-41d4-a716-446655440000"
+
+    UpdatePromptRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          nullable: true
+          example: "Updated Prompt Name"
+        description:
+          type: string
+          nullable: true
+          example: "Updated description"
 
     CreateVersionRequest:
       type: object
@@ -307,7 +578,6 @@ components:
         tag_name:
           type: string
           example: "latest"
-          enum: [latest, production, experimental]
         version_id:
           type: string
           format: uuid
@@ -340,3 +610,17 @@ components:
           type: string
           format: uuid
           example: "770e8400-e29b-41d4-a716-446655440000"
+
+    UpdateFeedbackRequest:
+      type: object
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+          example: 4
+        comment:
+          type: string
+          nullable: true
+          example: "Updated comment"
