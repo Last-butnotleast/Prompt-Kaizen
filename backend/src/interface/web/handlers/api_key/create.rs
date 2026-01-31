@@ -25,7 +25,7 @@ pub async fn create_api_key(
     headers: HeaderMap,
     Json(payload): Json<CreateApiKeyRequest>,
 ) -> Result<(StatusCode, Json<CreateApiKeyResponse>), (StatusCode, String)> {
-    let user_id = extract_user_id(&headers)?;
+    let user_id = extract_user_id(&headers).await?;
 
     let (id, api_key) = state
         .create_api_key

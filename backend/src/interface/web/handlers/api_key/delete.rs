@@ -15,7 +15,7 @@ pub async fn delete_api_key(
     headers: HeaderMap,
     Path(api_key_id): Path<String>,
 ) -> Result<StatusCode, (StatusCode, String)> {
-    let user_id = extract_user_id(&headers)?;
+    let user_id = extract_user_id(&headers).await?;
     let key_uuid = parse_uuid(&api_key_id, "api_key_id")?;
 
     state

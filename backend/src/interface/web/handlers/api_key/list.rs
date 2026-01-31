@@ -15,7 +15,7 @@ pub async fn list_api_keys(
     State(state): State<Arc<AppState>>,
     headers: HeaderMap,
 ) -> Result<Json<Vec<ApiKeyResponse>>, (StatusCode, String)> {
-    let user_id = extract_user_id(&headers)?;
+    let user_id = extract_user_id(&headers).await?;
 
     let api_keys = state
         .list_api_keys
