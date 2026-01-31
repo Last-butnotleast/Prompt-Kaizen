@@ -21,12 +21,14 @@ import type {
   TagVersionRequest,
   SubmitFeedbackRequest,
   Version,
+  Feedback,
 } from "@/types";
 import { CreateVersionDialog } from "@/components/versions/CreateVersionDialog";
-import { VersionContentDialog } from "@/components/versions/VersionContentDialog";
+import { VersionDetailDialog } from "@/components/versions/VersionDetailDialog";
 import { VersionCard } from "@/components/versions/VersionCard";
 import { AddTagDialog } from "@/components/tags/AddTagDialog";
 import { TagManagementDialog } from "@/components/tags/TagManagementDialog";
+import { FeedbackFormDialog } from "@/components/feedback/FeedbackFormDialog";
 
 interface PromptDetailDisplayProps {
   prompt?: Prompt;
@@ -39,11 +41,14 @@ interface PromptDetailDisplayProps {
   onTagVersion: (data: TagVersionRequest) => Promise<void>;
   onDeleteTag: (tagName: string) => Promise<void>;
   onSubmitFeedback: (data: SubmitFeedbackRequest) => Promise<void>;
+  onDeleteFeedback: (versionId: string, feedbackId: string) => Promise<void>;
   onBack: () => void;
   isUpdating: boolean;
   isDeleting: boolean;
   isCreatingVersion: boolean;
   isTagging: boolean;
+  isSubmittingFeedback: boolean;
+  versionFeedback: Record<string, Feedback[]>;
 }
 
 export function PromptDetailDisplay({
@@ -54,9 +59,13 @@ export function PromptDetailDisplay({
   onDeleteVersion,
   onTagVersion,
   onDeleteTag,
+  onSubmitFeedback,
+  onDeleteFeedback,
   onBack,
   isCreatingVersion,
   isTagging,
+  isSubmittingFeedback,
+  versionFeedback,
 }: PromptDetailDisplayProps) {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
@@ -64,6 +73,7 @@ export function PromptDetailDisplay({
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [addTagDialogOpen, setAddTagDialogOpen] = useState(false);
   const [tagManagementOpen, setTagManagementOpen] = useState(false);
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<Version | null>(null);
 
   useEffect(() => {
@@ -100,7 +110,12 @@ export function PromptDetailDisplay({
 
   const handleDeleteVersion = async (versionId: string) => {
     if (confirm("Are you sure you want to delete this version?")) {
-      await onDeleteVersion(versionId);
+      try {
+        await onDeleteVersion(versionId);
+      } catch (error) {
+        console.error("Failed to delete version:", error);
+        alert("Failed to delete version");
+      }
     }
   };
 
@@ -115,7 +130,29 @@ export function PromptDetailDisplay({
   };
 
   const handleDeleteTag = async (tagName: string) => {
-    await onDeleteTag(tagName);
+    try {
+      await onDeleteTag(tagName);
+    } catch (error) {
+      console.error("Failed to delete tag:", error);
+      alert("Failed to delete tag");
+    }
+  };
+
+  const handleAddFeedback = () => {
+    setViewDialogOpen(false);
+    setFeedbackDialogOpen(true);
+  };
+
+  const handleSubmitFeedback = async (data: SubmitFeedbackRequest) => {
+    await onSubmitFeedback(data);
+    setFeedbackDialogOpen(false);
+    setViewDialogOpen(true);
+  };
+
+  const handleDeleteFeedback = async (feedbackId: string) => {
+    if (selectedVersion && confirm("Delete this feedback?")) {
+      await onDeleteFeedback(selectedVersion.id, feedbackId);
+    }
   };
 
   const getVersionTags = (versionId: string): string[] => {
@@ -244,23 +281,36 @@ export function PromptDetailDisplay({
         latestVersion={latestVersion}
       />
 
-      <VersionContentDialog
-        open={viewDialogOpen}
-        onOpenChange={setViewDialogOpen}
-        version={selectedVersion}
-        tags={selectedVersion ? getVersionTags(selectedVersion.id) : []}
-      />
-
       {selectedVersion && (
-        <AddTagDialog
-          open={addTagDialogOpen}
-          onOpenChange={setAddTagDialogOpen}
-          onSubmit={handleTagVersion}
-          isLoading={isTagging}
-          versionId={selectedVersion.id}
-          versionNumber={selectedVersion.version}
-          existingTags={getVersionTags(selectedVersion.id)}
-        />
+        <>
+          <VersionDetailDialog
+            open={viewDialogOpen}
+            onOpenChange={setViewDialogOpen}
+            version={selectedVersion}
+            tags={getVersionTags(selectedVersion.id)}
+            feedback={versionFeedback?.[selectedVersion.id] || []} // Add optional chaining
+            onAddFeedback={handleAddFeedback}
+            onDeleteFeedback={handleDeleteFeedback}
+          />
+          <AddTagDialog
+            open={addTagDialogOpen}
+            onOpenChange={setAddTagDialogOpen}
+            onSubmit={handleTagVersion}
+            isLoading={isTagging}
+            versionId={selectedVersion.id}
+            versionNumber={selectedVersion.version}
+            existingTags={getVersionTags(selectedVersion.id)}
+          />
+
+          <FeedbackFormDialog
+            open={feedbackDialogOpen}
+            onOpenChange={setFeedbackDialogOpen}
+            onSubmit={handleSubmitFeedback}
+            isLoading={isSubmittingFeedback}
+            versionId={selectedVersion.id}
+            versionNumber={selectedVersion.version}
+          />
+        </>
       )}
 
       {prompt && (

@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "../client";
 
 export const useSubmitFeedback = (promptId: string) => {
@@ -19,7 +19,7 @@ export const useSubmitFeedback = (promptId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts", promptId] });
-      queryClient.invalidateQueries({ queryKey: ["versions", promptId] });
+      queryClient.invalidateQueries({ queryKey: ["feedback", promptId] });
     },
   });
 };
@@ -48,7 +48,9 @@ export const useUpdateFeedback = (promptId: string, versionId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts", promptId] });
-      queryClient.invalidateQueries({ queryKey: ["versions", promptId] });
+      queryClient.invalidateQueries({
+        queryKey: ["feedback", promptId, versionId],
+      });
     },
   });
 };
@@ -75,7 +77,9 @@ export const useDeleteFeedback = (promptId: string, versionId: string) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts", promptId] });
-      queryClient.invalidateQueries({ queryKey: ["versions", promptId] });
+      queryClient.invalidateQueries({
+        queryKey: ["feedback", promptId, versionId],
+      });
     },
   });
 };
