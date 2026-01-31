@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -10,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ArrowLeft, Plus, Tag, Trash2, Star } from "lucide-react";
+import { ArrowLeft, Plus, Tag } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import supabase from "@/lib/supabase";
@@ -21,7 +20,11 @@ import type {
   CreateVersionRequest,
   TagVersionRequest,
   SubmitFeedbackRequest,
+  Version,
 } from "@/types";
+import { CreateVersionDialog } from "@/components/versions/CreateVersionDialog";
+import { VersionContentDialog } from "@/components/versions/VersionContentDialog";
+import { VersionCard } from "@/components/versions/VersionCard";
 
 interface PromptDetailDisplayProps {
   prompt?: Prompt;
@@ -44,10 +47,16 @@ export function PromptDetailDisplay({
   prompt,
   isLoading,
   error,
+  onCreateVersion,
+  onDeleteVersion,
   onBack,
+  isCreatingVersion,
 }: PromptDetailDisplayProps) {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [selectedVersion, setSelectedVersion] = useState<Version | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -71,6 +80,33 @@ export function PromptDetailDisplay({
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  const handleCreateVersion = async (data: CreateVersionRequest) => {
+    await onCreateVersion(data);
+    setCreateDialogOpen(false);
+  };
+
+  const handleViewVersion = (version: Version) => {
+    setSelectedVersion(version);
+    setViewDialogOpen(true);
+  };
+
+  const handleDeleteVersion = async (versionId: string) => {
+    if (confirm("Are you sure you want to delete this version?")) {
+      await onDeleteVersion(versionId);
+    }
+  };
+
+  const getVersionTags = (versionId: string): string[] => {
+    if (!prompt) return [];
+    return prompt.tags
+      .filter((t) => t.version_id === versionId)
+      .map((t) => t.name);
+  };
+
+  const latestVersion = prompt?.versions.sort((a, b) =>
+    b.version.localeCompare(a.version),
+  )[0]?.version;
+
   if (!user) return null;
 
   return (
@@ -86,7 +122,7 @@ export function PromptDetailDisplay({
               {prompt?.name || "Prompt"}
             </h1>
           </div>
-          <Button size="sm">
+          <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             New Version
           </Button>
@@ -154,55 +190,15 @@ export function PromptDetailDisplay({
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {prompt.versions.map((version) => {
-                        const versionTags = prompt.tags.filter(
-                          (t) => t.version_id === version.id,
-                        );
-                        return (
-                          <div
-                            key={version.id}
-                            className="border rounded-lg p-4"
-                          >
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <Badge variant="outline">
-                                  v{version.version}
-                                </Badge>
-                                {versionTags.map((tag) => (
-                                  <Badge key={tag.name} variant="secondary">
-                                    {tag.name}
-                                  </Badge>
-                                ))}
-                              </div>
-                              <Button variant="ghost" size="icon">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            {version.changelog && (
-                              <p className="text-sm text-muted-foreground mb-2">
-                                {version.changelog}
-                              </p>
-                            )}
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
-                              <span>
-                                {formatDistanceToNow(
-                                  new Date(version.created_at),
-                                  { addSuffix: true },
-                                )}
-                              </span>
-                              {version.feedback_count > 0 && (
-                                <div className="flex items-center gap-1">
-                                  <Star className="h-3 w-3 fill-current" />
-                                  <span>
-                                    {version.average_rating?.toFixed(1)}
-                                  </span>
-                                  <span>({version.feedback_count})</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
+                      {prompt.versions.map((version) => (
+                        <VersionCard
+                          key={version.id}
+                          version={version}
+                          tags={getVersionTags(version.id)}
+                          onView={() => handleViewVersion(version)}
+                          onDelete={() => handleDeleteVersion(version.id)}
+                        />
+                      ))}
                     </div>
                   )}
                 </CardContent>
@@ -211,6 +207,21 @@ export function PromptDetailDisplay({
           )}
         </main>
       </SidebarInset>
+
+      <CreateVersionDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSubmit={handleCreateVersion}
+        isLoading={isCreatingVersion}
+        latestVersion={latestVersion}
+      />
+
+      <VersionContentDialog
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+        version={selectedVersion}
+        tags={selectedVersion ? getVersionTags(selectedVersion.id) : []}
+      />
     </SidebarProvider>
   );
 }
