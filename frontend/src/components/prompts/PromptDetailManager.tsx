@@ -77,6 +77,7 @@ export function PromptDetailManager() {
       isUpdating={updatePrompt.isPending}
       isDeleting={deletePrompt.isPending}
       isCreatingVersion={createVersion.isPending}
+      isTagging={tagVersion.isPending}
     />
   );
 }

@@ -25,6 +25,8 @@ import type {
 import { CreateVersionDialog } from "@/components/versions/CreateVersionDialog";
 import { VersionContentDialog } from "@/components/versions/VersionContentDialog";
 import { VersionCard } from "@/components/versions/VersionCard";
+import { AddTagDialog } from "@/components/tags/AddTagDialog";
+import { TagManagementDialog } from "@/components/tags/TagManagementDialog";
 
 interface PromptDetailDisplayProps {
   prompt?: Prompt;
@@ -41,6 +43,7 @@ interface PromptDetailDisplayProps {
   isUpdating: boolean;
   isDeleting: boolean;
   isCreatingVersion: boolean;
+  isTagging: boolean;
 }
 
 export function PromptDetailDisplay({
@@ -49,13 +52,18 @@ export function PromptDetailDisplay({
   error,
   onCreateVersion,
   onDeleteVersion,
+  onTagVersion,
+  onDeleteTag,
   onBack,
   isCreatingVersion,
+  isTagging,
 }: PromptDetailDisplayProps) {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [addTagDialogOpen, setAddTagDialogOpen] = useState(false);
+  const [tagManagementOpen, setTagManagementOpen] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<Version | null>(null);
 
   useEffect(() => {
@@ -94,6 +102,20 @@ export function PromptDetailDisplay({
     if (confirm("Are you sure you want to delete this version?")) {
       await onDeleteVersion(versionId);
     }
+  };
+
+  const handleAddTag = (version: Version) => {
+    setSelectedVersion(version);
+    setAddTagDialogOpen(true);
+  };
+
+  const handleTagVersion = async (data: TagVersionRequest) => {
+    await onTagVersion(data);
+    setAddTagDialogOpen(false);
+  };
+
+  const handleDeleteTag = async (tagName: string) => {
+    await onDeleteTag(tagName);
   };
 
   const getVersionTags = (versionId: string): string[] => {
@@ -177,7 +199,11 @@ export function PromptDetailDisplay({
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>Versions</CardTitle>
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setTagManagementOpen(true)}
+                    >
                       <Tag className="h-4 w-4 mr-2" />
                       Manage Tags
                     </Button>
@@ -197,6 +223,8 @@ export function PromptDetailDisplay({
                           tags={getVersionTags(version.id)}
                           onView={() => handleViewVersion(version)}
                           onDelete={() => handleDeleteVersion(version.id)}
+                          onAddTag={() => handleAddTag(version)}
+                          onDeleteTag={handleDeleteTag}
                         />
                       ))}
                     </div>
@@ -222,6 +250,27 @@ export function PromptDetailDisplay({
         version={selectedVersion}
         tags={selectedVersion ? getVersionTags(selectedVersion.id) : []}
       />
+
+      {selectedVersion && (
+        <AddTagDialog
+          open={addTagDialogOpen}
+          onOpenChange={setAddTagDialogOpen}
+          onSubmit={handleTagVersion}
+          isLoading={isTagging}
+          versionId={selectedVersion.id}
+          versionNumber={selectedVersion.version}
+          existingTags={getVersionTags(selectedVersion.id)}
+        />
+      )}
+
+      {prompt && (
+        <TagManagementDialog
+          open={tagManagementOpen}
+          onOpenChange={setTagManagementOpen}
+          prompt={prompt}
+          onDeleteTag={handleDeleteTag}
+        />
+      )}
     </SidebarProvider>
   );
 }
