@@ -1,4 +1,5 @@
 use crate::application::PromptRepository;
+use crate::domain::prompt::Version;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -24,6 +25,7 @@ impl CreateVersion {
             .await?
             .ok_or_else(|| "Prompt not found".to_string())?;
 
+        let version = Version::from_str(&version)?;
         let version_id = Uuid::new_v4();
         prompt.add_version(version_id, version, content, changelog)?;
         self.repository.save(&prompt).await?;

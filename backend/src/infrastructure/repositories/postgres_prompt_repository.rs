@@ -1,5 +1,5 @@
 use crate::application::PromptRepository;
-use crate::domain::prompt::{Prompt, PromptVersion, Tag, Feedback};
+use crate::domain::prompt::{Prompt, PromptVersion, Tag, Feedback, Version};
 use async_trait::async_trait;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
@@ -30,10 +30,13 @@ impl PostgresPromptRepository {
 
             let feedbacks = self.fetch_feedbacks(version_id).await?;
 
+            let version_string: String = row.try_get("version").map_err(|e| e.to_string())?;
+            let version = Version::from_str(&version_string)?;
+
             let mut version = PromptVersion::new(
                 version_id,
                 prompt_id,
-                row.try_get("version").map_err(|e| e.to_string())?,
+                version,
                 row.try_get("content").map_err(|e| e.to_string())?,
                 row.try_get("changelog").map_err(|e| e.to_string())?,
             );
@@ -117,7 +120,7 @@ impl PostgresPromptRepository {
             )
                 .bind(version.id())
                 .bind(version.prompt_id())
-                .bind(version.version())
+                .bind(version.version_string())
                 .bind(version.digest())
                 .bind(version.content())
                 .bind(version.changelog())
