@@ -6,6 +6,8 @@ mod interface;
 use std::sync::Arc;
 use infrastructure::repositories::{PostgresPromptRepository, PostgresApiKeyRepository};
 use application::use_cases::*;
+use application::AIService;
+use infrastructure::OpenAIService;
 use interface::web::{create_router, handlers::AppState};
 
 #[tokio::main]
@@ -30,6 +32,9 @@ async fn main() {
 
     let prompt_repository = Arc::new(PostgresPromptRepository::new(pool.clone()));
     let api_key_repository = Arc::new(PostgresApiKeyRepository::new(pool.clone()));
+    let openai_api_key = std::env::var("OPENAI_API_KEY")
+        .expect("OPENAI_API_KEY must be set in .env file");
+    let ai_service: Arc<dyn AIService> = Arc::new(OpenAIService::new(openai_api_key));
 
     let create_prompt = Arc::new(CreatePrompt::new(prompt_repository.clone()));
     let update_prompt = Arc::new(UpdatePrompt::new(prompt_repository.clone()));
@@ -55,6 +60,10 @@ async fn main() {
     let accept_improvement_suggestion = Arc::new(AcceptImprovementSuggestion::new(prompt_repository.clone()));
     let decline_improvement_suggestion = Arc::new(DeclineImprovementSuggestion::new(prompt_repository.clone()));
     let get_suggestions_for_version = Arc::new(GetSuggestionsForVersion::new(prompt_repository.clone()));
+    let analyze_feedback_and_suggest = Arc::new(AnalyzeFeedbackAndSuggest::new(
+        prompt_repository.clone(),
+        ai_service.clone(),
+    ));
 
     let create_api_key = Arc::new(CreateApiKey::new(api_key_repository.clone()));
     let list_api_keys = Arc::new(ListApiKeys::new(api_key_repository.clone()));
@@ -85,6 +94,7 @@ async fn main() {
         decline_improvement_suggestion,
         get_suggestions_for_version,
         api_key_repository,
+        analyze_feedback_and_suggest,
     });
 
     let app = create_router(app_state);

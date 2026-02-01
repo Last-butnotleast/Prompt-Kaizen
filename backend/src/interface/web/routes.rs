@@ -13,7 +13,7 @@ use super::handlers::{
     tag::{tag_version, delete_tag, get_version_by_tag},
     feedback::{submit_feedback, update_feedback, delete_feedback},
     api_key::{create_api_key, list_api_keys, delete_api_key},
-    improvement::{create_improvement_suggestion, accept_improvement_suggestion, decline_improvement_suggestion, list_suggestions_for_version},
+    improvement::{create_improvement_suggestion, accept_improvement_suggestion, decline_improvement_suggestion, list_suggestions_for_version,analyze_feedback},
 };
 
 pub fn create_router(state: Arc<AppState>) -> Router {
@@ -49,6 +49,7 @@ pub fn create_router(state: Arc<AppState>) -> Router {
         .route("/prompts/{prompt_id}/versions/{version_id}/improvements", get(list_suggestions_for_version))
         .route("/prompts/{prompt_id}/versions/{version_id}/improvements/{suggestion_id}/accept", post(accept_improvement_suggestion))
         .route("/prompts/{prompt_id}/versions/{version_id}/improvements/{suggestion_id}/decline", post(decline_improvement_suggestion))
+        .route("/prompts/{prompt_id}/versions/{version_id}/analyze-feedback", post(analyze_feedback))
 
         .layer(cors)
         .with_state(state)

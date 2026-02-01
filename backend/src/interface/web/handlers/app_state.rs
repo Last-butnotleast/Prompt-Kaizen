@@ -31,6 +31,7 @@ pub struct AppState {
     pub accept_improvement_suggestion: Arc<AcceptImprovementSuggestion>,
     pub decline_improvement_suggestion: Arc<DeclineImprovementSuggestion>,
     pub get_suggestions_for_version: Arc<GetSuggestionsForVersion>,
+    pub analyze_feedback_and_suggest: Arc<AnalyzeFeedbackAndSuggest>,
 
     pub api_key_repository: Arc<dyn ApiKeyRepository>,
 }
