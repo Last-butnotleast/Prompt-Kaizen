@@ -1,7 +1,4 @@
-import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import supabase from "@/lib/supabase";
@@ -9,6 +6,8 @@ import type { User } from "@supabase/supabase-js";
 import type { Prompt, CreatePromptRequest } from "@/types";
 import { PromptsList } from "./PromptsList";
 import { CreatePromptDialog } from "./CreatePromptDialog";
+import { SimpleHeader } from "@/components/layout/SimpleHeader";
+import { toast } from "sonner";
 
 interface PromptsDisplayProps {
   prompts: Prompt[];
@@ -54,61 +53,54 @@ export function PromptsDisplay({
   }, [navigate]);
 
   const handleCreate = async (data: CreatePromptRequest) => {
-    await onCreatePrompt(data);
-    setDialogOpen(false);
+    try {
+      await onCreatePrompt(data);
+      setDialogOpen(false);
+      toast.success("Prompt created", {
+        description: data.name,
+      });
+    } catch (error) {
+      toast.error("Failed to create prompt");
+    }
   };
 
   if (!user) return null;
 
   return (
-    <SidebarProvider>
-      <AppSidebar user={user} />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <div className="flex items-center gap-2 flex-1">
-            <h1 className="text-xl font-semibold">Prompts</h1>
-          </div>
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Prompt
+    <div className="min-h-screen bg-neutral-50">
+      <SimpleHeader user={user} breadcrumbs={[{ label: "Prompts" }]} />
+      <main className="max-w-7xl mx-auto px-8 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-semibold">Prompts</h1>
+          <Button onClick={() => setDialogOpen(true)} size="sm">
+            New
           </Button>
-        </header>
-        <main className="flex flex-1 flex-col gap-4 p-4">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-muted-foreground">Loading prompts...</div>
-            </div>
-          ) : error ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-destructive">
-                Failed to load prompts: {error.message}
-              </div>
-            </div>
-          ) : prompts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 gap-4">
-              <div className="text-center">
-                <h2 className="text-lg font-semibold mb-2">No prompts yet</h2>
-                <p className="text-muted-foreground mb-4">
-                  Create your first prompt to get started with version control
-                  and feedback tracking.
-                </p>
-                <Button onClick={() => setDialogOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create First Prompt
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <PromptsList prompts={prompts} onPromptClick={onPromptClick} />
-          )}
-        </main>
-      </SidebarInset>
+        </div>
+        {isLoading ? (
+          <div className="text-center py-20 text-muted-foreground">
+            Loading...
+          </div>
+        ) : error ? (
+          <div className="text-center py-20 text-destructive">
+            Failed to load prompts
+          </div>
+        ) : prompts.length === 0 ? (
+          <div className="text-center py-20">
+            <p className="text-muted-foreground mb-4">No prompts yet</p>
+            <Button onClick={() => setDialogOpen(true)}>
+              Create first prompt
+            </Button>
+          </div>
+        ) : (
+          <PromptsList prompts={prompts} onPromptClick={onPromptClick} />
+        )}
+      </main>
       <CreatePromptDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onSubmit={handleCreate}
         isLoading={isCreating}
       />
-    </SidebarProvider>
+    </div>
   );
 }

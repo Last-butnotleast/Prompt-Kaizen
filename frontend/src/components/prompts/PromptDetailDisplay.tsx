@@ -1,17 +1,6 @@
 import { useState, useEffect } from "react";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { ArrowLeft, Plus, Sparkles, Tag } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
-import { formatDistanceToNow } from "date-fns";
 import supabase from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import type {
@@ -20,15 +9,27 @@ import type {
   CreateVersionRequest,
   TagVersionRequest,
   SubmitFeedbackRequest,
-  Version,
   Feedback,
 } from "@/types";
 import { CreateVersionDialog } from "@/components/versions/CreateVersionDialog";
 import { VersionDetailDialog } from "@/components/versions/VersionDetailDialog";
-import { VersionCard } from "@/components/versions/VersionCard";
-import { AddTagDialog } from "@/components/tags/AddTagDialog";
-import { TagManagementDialog } from "@/components/tags/TagManagementDialog";
-import { FeedbackFormDialog } from "@/components/feedback/FeedbackFormDialog";
+import { SimpleHeader } from "@/components/layout/SimpleHeader";
+import { formatDistanceToNow } from "date-fns";
+import { Star } from "lucide-react";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { toast } from "sonner";
 
 interface PromptDetailDisplayProps {
   prompt?: Prompt;
@@ -54,6 +55,14 @@ interface PromptDetailDisplayProps {
   analyzingVersionId: string | null;
 }
 
+const STANDARD_TAGS = [
+  "latest",
+  "production",
+  "staging",
+  "experimental",
+  "deprecated",
+];
+
 export function PromptDetailDisplay({
   prompt,
   isLoading,
@@ -62,25 +71,21 @@ export function PromptDetailDisplay({
   onDeleteVersion,
   onTagVersion,
   onDeleteTag,
-  onSubmitFeedback,
   onDeleteFeedback,
-  onBack,
   isCreatingVersion,
-  isTagging,
-  isSubmittingFeedback,
   versionFeedback,
-  onAnalyzeFeedback,
-  isAnalyzing,
-  analyzingVersionId,
 }: PromptDetailDisplayProps) {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [addTagDialogOpen, setAddTagDialogOpen] = useState(false);
-  const [tagManagementOpen, setTagManagementOpen] = useState(false);
-  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
-  const [selectedVersion, setSelectedVersion] = useState<Version | null>(null);
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(
+    null,
+  );
+  const [addingTagToVersion, setAddingTagToVersion] = useState<string | null>(
+    null,
+  );
+  const [hoveredVersion, setHoveredVersion] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -105,59 +110,57 @@ export function PromptDetailDisplay({
   }, [navigate]);
 
   const handleCreateVersion = async (data: CreateVersionRequest) => {
-    await onCreateVersion(data);
+    toast.promise(() => onCreateVersion(data), {
+      loading: "Creating version...",
+      success: `v${data.version} created successfully`,
+      error: "Failed to create version",
+    });
     setCreateDialogOpen(false);
   };
 
-  const handleViewVersion = (version: Version) => {
-    setSelectedVersion(version);
+  const handleViewVersion = (versionId: string) => {
+    setSelectedVersionId(versionId);
     setViewDialogOpen(true);
   };
 
-  const handleDeleteVersion = async (versionId: string) => {
-    if (confirm("Are you sure you want to delete this version?")) {
-      try {
-        await onDeleteVersion(versionId);
-      } catch (error) {
-        console.error("Failed to delete version:", error);
-        alert("Failed to delete version");
-      }
-    }
+  const handleDeleteVersion = async (
+    versionId: string,
+    versionNumber: string,
+  ) => {
+    toast.promise(() => onDeleteVersion(versionId), {
+      loading: "Deleting version...",
+      success: `v${versionNumber} removed`,
+      error: "Failed to delete version",
+    });
   };
 
-  const handleAddTag = (version: Version) => {
-    setSelectedVersion(version);
-    setAddTagDialogOpen(true);
-  };
-
-  const handleTagVersion = async (data: TagVersionRequest) => {
-    await onTagVersion(data);
-    setAddTagDialogOpen(false);
+  const handleSelectTag = async (versionId: string, tagName: string) => {
+    toast.promise(
+      () => onTagVersion({ tag_name: tagName, version_id: versionId }),
+      {
+        loading: "Adding tag...",
+        success: `Tagged with "${tagName}"`,
+        error: "Failed to add tag",
+      },
+    );
+    setAddingTagToVersion(null);
   };
 
   const handleDeleteTag = async (tagName: string) => {
-    try {
-      await onDeleteTag(tagName);
-    } catch (error) {
-      console.error("Failed to delete tag:", error);
-      alert("Failed to delete tag");
-    }
-  };
-
-  const handleAddFeedback = () => {
-    setViewDialogOpen(false);
-    setFeedbackDialogOpen(true);
-  };
-
-  const handleSubmitFeedback = async (data: SubmitFeedbackRequest) => {
-    await onSubmitFeedback(data);
-    setFeedbackDialogOpen(false);
-    setViewDialogOpen(true);
+    toast.promise(() => onDeleteTag(tagName), {
+      loading: "Removing tag...",
+      success: `"${tagName}" removed`,
+      error: "Failed to remove tag",
+    });
   };
 
   const handleDeleteFeedback = async (feedbackId: string) => {
-    if (selectedVersion && confirm("Delete this feedback?")) {
-      await onDeleteFeedback(selectedVersion.id, feedbackId);
+    if (selectedVersionId) {
+      toast.promise(() => onDeleteFeedback(selectedVersionId, feedbackId), {
+        loading: "Deleting feedback...",
+        success: "Feedback deleted",
+        error: "Failed to delete feedback",
+      });
     }
   };
 
@@ -168,137 +171,253 @@ export function PromptDetailDisplay({
       .map((t) => t.name);
   };
 
+  const getAvailableTags = (versionId: string): string[] => {
+    const existingTags = getVersionTags(versionId);
+    return STANDARD_TAGS.filter((tag) => !existingTags.includes(tag));
+  };
+
   const latestVersion = prompt?.versions.sort((a, b) =>
     b.version.localeCompare(a.version),
   )[0]?.version;
 
+  const selectedVersion = prompt?.versions.find(
+    (v) => v.id === selectedVersionId,
+  );
+
   if (!user) return null;
 
   return (
-    <SidebarProvider>
-      <AppSidebar user={user} />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <Button variant="ghost" size="icon" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="flex items-center gap-2 flex-1">
-            <h1 className="text-xl font-semibold">
-              {prompt?.name || "Prompt"}
-            </h1>
+    <div className="min-h-screen bg-neutral-50">
+      <SimpleHeader
+        user={user}
+        breadcrumbs={[
+          { label: "Prompts", to: "/prompts" },
+          { label: prompt?.name || "..." },
+        ]}
+      />
+      <main className="max-w-7xl mx-auto px-8 py-8">
+        {isLoading ? (
+          <div className="text-center py-20 text-muted-foreground">
+            Loading...
           </div>
-          <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Version
-          </Button>
-        </header>
-        <main className="flex flex-1 flex-col gap-4 p-4">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-muted-foreground">Loading prompt...</div>
-            </div>
-          ) : error ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-destructive">
-                Failed to load prompt: {error.message}
+        ) : error ? (
+          <div className="text-center py-20 text-destructive">
+            Failed to load prompt
+          </div>
+        ) : !prompt ? (
+          <div className="text-center py-20 text-muted-foreground">
+            Prompt not found
+          </div>
+        ) : (
+          <div className="space-y-8">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-semibold">{prompt.name}</h1>
+                <span className="text-xs px-2 py-1 bg-neutral-100 text-muted-foreground rounded uppercase font-medium">
+                  {prompt.prompt_type}
+                </span>
               </div>
+              {prompt.description && (
+                <p className="text-lg text-muted-foreground max-w-3xl">
+                  {prompt.description}
+                </p>
+              )}
             </div>
-          ) : !prompt ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-muted-foreground">Prompt not found</div>
-            </div>
-          ) : (
-            <>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Details</CardTitle>
-                  {prompt.description && (
-                    <CardDescription>{prompt.description}</CardDescription>
-                  )}
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Created</span>
-                      <span>
-                        {formatDistanceToNow(new Date(prompt.created_at), {
-                          addSuffix: true,
-                        })}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Versions</span>
-                      <span>{prompt.versions.length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Tags</span>
-                      <span>{prompt.tags.length}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Versions</CardTitle>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          selectedVersion &&
-                          onAnalyzeFeedback(selectedVersion.id)
-                        }
-                        disabled={
-                          !selectedVersion ||
-                          !selectedVersion.feedback.length ||
-                          isAnalyzing
-                        }
-                      >
-                        <Sparkles className="h-4 w-4 mr-2" />
-                        {isAnalyzing &&
-                        analyzingVersionId === selectedVersion?.id
-                          ? "Analyzing..."
-                          : "Analyze Feedback"}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setTagManagementOpen(true)}
-                      >
-                        <Tag className="h-4 w-4 mr-2" />
-                        Manage Tags
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {prompt.versions.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No versions yet. Create your first version to get started.
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {prompt.versions.map((version) => (
-                        <VersionCard
-                          key={version.id}
-                          version={version}
-                          tags={getVersionTags(version.id)}
-                          onView={() => handleViewVersion(version)}
-                          onDelete={() => handleDeleteVersion(version.id)}
-                          onAddTag={() => handleAddTag(version)}
-                          onDeleteTag={handleDeleteTag}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </>
-          )}
-        </main>
-      </SidebarInset>
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-medium">Versions</h2>
+                <Button onClick={() => setCreateDialogOpen(true)} size="sm">
+                  New version
+                </Button>
+              </div>
+              {prompt.versions.length === 0 ? (
+                <div className="text-center py-20 text-muted-foreground bg-white border rounded">
+                  No versions yet
+                </div>
+              ) : (
+                <div className="bg-white border rounded overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-neutral-50 border-b text-sm text-muted-foreground">
+                      <tr>
+                        <th className="text-left py-3 px-6 font-medium">
+                          Version
+                        </th>
+                        <th className="text-left py-3 px-6 font-medium">
+                          Tags
+                        </th>
+                        <th className="text-left py-3 px-6 font-medium">
+                          Rating
+                        </th>
+                        <th className="text-left py-3 px-6 font-medium">
+                          Suggestions
+                        </th>
+                        <th className="text-left py-3 px-6 font-medium">
+                          Created
+                        </th>
+                        <th className="w-24"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {prompt.versions.map((version) => {
+                        const tags = getVersionTags(version.id);
+                        const availableTags = getAvailableTags(version.id);
+                        const pending =
+                          version.improvement_suggestions?.filter(
+                            (s) => s.status === "pending",
+                          ).length || 0;
+                        const isHovered = hoveredVersion === version.id;
+
+                        return (
+                          <tr
+                            key={version.id}
+                            className="border-b last:border-b-0 hover:bg-neutral-50 cursor-pointer"
+                            onClick={() => handleViewVersion(version.id)}
+                            onMouseEnter={() => setHoveredVersion(version.id)}
+                            onMouseLeave={() => setHoveredVersion(null)}
+                          >
+                            <td className="py-4 px-6">
+                              <span className="font-mono text-sm">
+                                v{version.version}
+                              </span>
+                              {version.changelog && (
+                                <div className="text-sm text-muted-foreground mt-1 line-clamp-1">
+                                  {version.changelog}
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-4 px-6">
+                              <div className="flex gap-2 flex-wrap items-center">
+                                {tags.map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="group text-xs px-2 py-1 bg-neutral-100 rounded flex items-center gap-1 cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteTag(tag);
+                                    }}
+                                  >
+                                    {tag}
+                                    <span className="opacity-0 group-hover:opacity-100 text-muted-foreground">
+                                      ×
+                                    </span>
+                                  </span>
+                                ))}
+                                <Popover
+                                  open={addingTagToVersion === version.id}
+                                  onOpenChange={(open) => {
+                                    if (!open) setAddingTagToVersion(null);
+                                  }}
+                                >
+                                  <PopoverTrigger asChild>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setAddingTagToVersion(version.id);
+                                      }}
+                                      className={`text-xs text-muted-foreground hover:text-foreground transition-opacity ${
+                                        isHovered ? "opacity-100" : "opacity-0"
+                                      }`}
+                                    >
+                                      + tag
+                                    </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent
+                                    className="w-48 p-0"
+                                    align="start"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Command>
+                                      <CommandInput placeholder="Search or type..." />
+                                      <CommandList>
+                                        <CommandEmpty>
+                                          Type to create custom tag
+                                        </CommandEmpty>
+                                        {availableTags.length > 0 && (
+                                          <CommandGroup heading="Standard">
+                                            {availableTags.map((tag) => (
+                                              <CommandItem
+                                                key={tag}
+                                                value={tag}
+                                                onSelect={() =>
+                                                  handleSelectTag(
+                                                    version.id,
+                                                    tag,
+                                                  )
+                                                }
+                                              >
+                                                {tag}
+                                              </CommandItem>
+                                            ))}
+                                          </CommandGroup>
+                                        )}
+                                      </CommandList>
+                                    </Command>
+                                  </PopoverContent>
+                                </Popover>
+                              </div>
+                            </td>
+                            <td className="py-4 px-6">
+                              {version.feedback_count > 0 ? (
+                                <div className="flex items-center gap-2 text-sm">
+                                  <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                  <span>
+                                    {version.average_rating?.toFixed(1)}
+                                  </span>
+                                  <span className="text-muted-foreground">
+                                    ({version.feedback_count})
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-sm text-muted-foreground">
+                                  —
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-4 px-6">
+                              {pending > 0 ? (
+                                <span className="text-sm">
+                                  {pending} pending
+                                </span>
+                              ) : (
+                                <span className="text-sm text-muted-foreground">
+                                  —
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-4 px-6 text-sm text-muted-foreground">
+                              {formatDistanceToNow(
+                                new Date(version.created_at),
+                                { addSuffix: true },
+                              )}
+                            </td>
+                            <td className="py-4 px-6">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteVersion(
+                                    version.id,
+                                    version.version,
+                                  );
+                                }}
+                                className={`text-sm text-muted-foreground hover:text-destructive transition-opacity ${
+                                  isHovered ? "opacity-100" : "opacity-0"
+                                }`}
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </main>
 
       <CreateVersionDialog
         open={createDialogOpen}
@@ -308,47 +427,17 @@ export function PromptDetailDisplay({
         latestVersion={latestVersion}
       />
 
-      {selectedVersion && (
-        <>
-          <VersionDetailDialog
-            open={viewDialogOpen}
-            onOpenChange={setViewDialogOpen}
-            version={selectedVersion}
-            tags={getVersionTags(selectedVersion.id)}
-            feedback={versionFeedback?.[selectedVersion.id] || []}
-            onAddFeedback={handleAddFeedback}
-            onDeleteFeedback={handleDeleteFeedback}
-            promptId={prompt!.id}
-          />
-          <AddTagDialog
-            open={addTagDialogOpen}
-            onOpenChange={setAddTagDialogOpen}
-            onSubmit={handleTagVersion}
-            isLoading={isTagging}
-            versionId={selectedVersion.id}
-            versionNumber={selectedVersion.version}
-            existingTags={getVersionTags(selectedVersion.id)}
-          />
-
-          <FeedbackFormDialog
-            open={feedbackDialogOpen}
-            onOpenChange={setFeedbackDialogOpen}
-            onSubmit={handleSubmitFeedback}
-            isLoading={isSubmittingFeedback}
-            versionId={selectedVersion.id}
-            versionNumber={selectedVersion.version}
-          />
-        </>
-      )}
-
-      {prompt && (
-        <TagManagementDialog
-          open={tagManagementOpen}
-          onOpenChange={setTagManagementOpen}
-          prompt={prompt}
-          onDeleteTag={handleDeleteTag}
+      {selectedVersion && prompt && (
+        <VersionDetailDialog
+          open={viewDialogOpen}
+          onOpenChange={setViewDialogOpen}
+          version={selectedVersion}
+          tags={getVersionTags(selectedVersion.id)}
+          feedback={versionFeedback?.[selectedVersion.id] || []}
+          onDeleteFeedback={handleDeleteFeedback}
+          promptId={prompt.id}
         />
       )}
-    </SidebarProvider>
+    </div>
   );
 }

@@ -71,7 +71,7 @@ export function FeedbackFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Rate Version {versionNumber}</DialogTitle>

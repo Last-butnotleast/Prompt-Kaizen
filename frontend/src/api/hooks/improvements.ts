@@ -133,6 +133,13 @@ export const useAnalyzeFeedback = (promptId: string, versionId: string) => {
       queryClient.invalidateQueries({
         queryKey: ["improvements", promptId, versionId],
       });
+      // Add these:
+      queryClient.invalidateQueries({
+        queryKey: ["versions", promptId, versionId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["prompts", promptId],
+      });
     },
   });
 };

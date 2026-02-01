@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,15 @@ interface AcceptSuggestionDialogProps {
   currentVersion: string;
 }
 
+function incrementPatchVersion(version: string): string {
+  const parts = version.split(".");
+  if (parts.length !== 3) return version;
+
+  const [major, minor, patch] = parts;
+  const newPatch = parseInt(patch, 10) + 1;
+  return `${major}.${minor}.${newPatch}`;
+}
+
 export function AcceptSuggestionDialog({
   open,
   onOpenChange,
@@ -29,6 +38,12 @@ export function AcceptSuggestionDialog({
 }: AcceptSuggestionDialogProps) {
   const [newVersion, setNewVersion] = useState("");
   const [changelog, setChangelog] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setNewVersion(incrementPatchVersion(currentVersion));
+    }
+  }, [open, currentVersion]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +56,7 @@ export function AcceptSuggestionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Accept Improvement</DialogTitle>
@@ -56,7 +71,7 @@ export function AcceptSuggestionDialog({
                 id="version"
                 value={newVersion}
                 onChange={(e) => setNewVersion(e.target.value)}
-                placeholder={`e.g., ${currentVersion}.1`}
+                placeholder={incrementPatchVersion(currentVersion)}
                 disabled={isLoading}
                 autoFocus
               />
