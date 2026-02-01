@@ -38,16 +38,8 @@ paths:
                 $ref: '#/components/schemas/CreatePromptResponse'
         '400':
           description: Bad request
-          content:
-            text/plain:
-              schema:
-                type: string
         '401':
-          description: Unauthorized - Missing or invalid user ID
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Unauthorized
     get:
       summary: List all prompts for the authenticated user
       operationId: listPrompts
@@ -63,17 +55,9 @@ paths:
                 items:
                   $ref: '#/components/schemas/PromptResponse'
         '401':
-          description: Unauthorized - Missing or invalid user ID
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Unauthorized
         '500':
           description: Internal server error
-          content:
-            text/plain:
-              schema:
-                type: string
 
   /prompts/{prompt_id}:
     get:
@@ -96,17 +80,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/PromptResponse'
         '401':
-          description: Unauthorized - Missing or invalid user ID
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Unauthorized
         '404':
-          description: Prompt not found or not owned by user
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Prompt not found
     put:
       summary: Update a prompt
       operationId: updatePrompt
@@ -130,22 +106,10 @@ paths:
           description: Prompt updated successfully
         '400':
           description: Bad request
-          content:
-            text/plain:
-              schema:
-                type: string
         '401':
-          description: Unauthorized - Missing or invalid user ID
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Unauthorized
         '404':
-          description: Prompt not found or not owned by user
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Prompt not found
     delete:
       summary: Delete a prompt
       operationId: deletePrompt
@@ -162,21 +126,13 @@ paths:
         '204':
           description: Prompt deleted successfully
         '401':
-          description: Unauthorized - Missing or invalid user ID
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Unauthorized
         '404':
-          description: Prompt not found or not owned by user
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Prompt not found
 
   /prompts/{prompt_id}/versions:
     post:
-      summary: Create a new version of a prompt
+      summary: Create a new version
       operationId: createVersion
       tags:
         - Versions
@@ -202,22 +158,10 @@ paths:
                 $ref: '#/components/schemas/CreateVersionResponse'
         '400':
           description: Bad request
-          content:
-            text/plain:
-              schema:
-                type: string
         '401':
-          description: Unauthorized - Missing or invalid user ID
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Unauthorized
         '404':
-          description: Prompt not found or not owned by user
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Prompt not found
 
   /prompts/{prompt_id}/versions/{version_id}:
     get:
@@ -246,17 +190,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/VersionResponse'
         '401':
-          description: Unauthorized - Missing or invalid user ID
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Unauthorized
         '404':
-          description: Version not found or prompt not owned by user
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Version not found
     delete:
       summary: Delete a version
       operationId: deleteVersion
@@ -279,17 +215,48 @@ paths:
         '204':
           description: Version deleted successfully
         '401':
-          description: Unauthorized - Missing or invalid user ID
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Unauthorized
         '404':
-          description: Version not found or prompt not owned by user
+          description: Version not found
+
+  /prompts/{prompt_id}/versions/{version_id}/render:
+    post:
+      summary: Render a version with context variables
+      operationId: renderVersion
+      tags:
+        - Versions
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: version_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RenderVersionRequest'
+      responses:
+        '200':
+          description: Rendered content
           content:
-            text/plain:
+            application/json:
               schema:
-                type: string
+                $ref: '#/components/schemas/RenderVersionResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Version not found
 
   /prompts/{prompt_id}/tags:
     post:
@@ -315,22 +282,10 @@ paths:
           description: Version tagged successfully
         '400':
           description: Bad request
-          content:
-            text/plain:
-              schema:
-                type: string
         '401':
-          description: Unauthorized - Missing or invalid user ID
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Unauthorized
         '404':
-          description: Prompt not found or not owned by user
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Prompt not found
 
   /prompts/{prompt_id}/tags/{tag_name}:
     delete:
@@ -354,17 +309,9 @@ paths:
         '204':
           description: Tag deleted successfully
         '401':
-          description: Unauthorized - Missing or invalid user ID
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Unauthorized
         '404':
-          description: Tag not found or prompt not owned by user
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Tag not found
 
   /prompts/{prompt_id}/tags/{tag_name}/version:
     get:
@@ -392,21 +339,51 @@ paths:
               schema:
                 $ref: '#/components/schemas/VersionResponse'
         '401':
-          description: Unauthorized - Missing or invalid user ID
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Unauthorized
         '404':
-          description: Tag or version not found, or prompt not owned by user
+          description: Tag or version not found
+
+  /prompts/{prompt_id}/tags/{tag_name}/render:
+    post:
+      summary: Render a version by tag with context variables
+      operationId: renderVersionByTag
+      tags:
+        - Tags
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: tag_name
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RenderVersionRequest'
+      responses:
+        '200':
+          description: Rendered content
           content:
-            text/plain:
+            application/json:
               schema:
-                type: string
+                $ref: '#/components/schemas/RenderVersionResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Tag not found
 
   /prompts/{prompt_id}/feedback:
     post:
-      summary: Submit feedback for a prompt version
+      summary: Submit feedback for a version
       operationId: submitFeedback
       tags:
         - Feedback
@@ -432,22 +409,10 @@ paths:
                 $ref: '#/components/schemas/SubmitFeedbackResponse'
         '400':
           description: Bad request
-          content:
-            text/plain:
-              schema:
-                type: string
         '401':
-          description: Unauthorized - Missing or invalid user ID
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Unauthorized
         '404':
-          description: Prompt not found or not owned by user
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Prompt not found
 
   /prompts/{prompt_id}/versions/{version_id}/feedback/{feedback_id}:
     put:
@@ -485,22 +450,10 @@ paths:
           description: Feedback updated successfully
         '400':
           description: Bad request
-          content:
-            text/plain:
-              schema:
-                type: string
         '401':
-          description: Unauthorized - Missing or invalid user ID
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Unauthorized
         '404':
-          description: Feedback not found or prompt not owned by user
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Feedback not found
     delete:
       summary: Delete feedback
       operationId: deleteFeedback
@@ -529,17 +482,9 @@ paths:
         '204':
           description: Feedback deleted successfully
         '401':
-          description: Unauthorized - Missing or invalid user ID
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Unauthorized
         '404':
-          description: Feedback not found or prompt not owned by user
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Feedback not found
 
   /api-keys:
     post:
@@ -564,18 +509,10 @@ paths:
                 $ref: '#/components/schemas/CreateApiKeyResponse'
         '400':
           description: Bad request
-          content:
-            text/plain:
-              schema:
-                type: string
         '401':
-          description: Unauthorized - Missing or invalid user ID
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Unauthorized
     get:
-      summary: List all API keys for the authenticated user
+      summary: List all API keys
       operationId: listApiKeys
       tags:
         - API Keys
@@ -591,17 +528,9 @@ paths:
                 items:
                   $ref: '#/components/schemas/ApiKeyResponse'
         '401':
-          description: Unauthorized - Missing or invalid user ID
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Unauthorized
         '500':
           description: Internal server error
-          content:
-            text/plain:
-              schema:
-                type: string
 
   /api-keys/{api_key_id}:
     delete:
@@ -622,30 +551,206 @@ paths:
         '204':
           description: API key deleted successfully
         '401':
-          description: Unauthorized - Missing or invalid user ID
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: Unauthorized
         '404':
-          description: API key not found or not owned by user
-          content:
-            text/plain:
-              schema:
-                type: string
+          description: API key not found
 
+  /prompts/{prompt_id}/improvements:
+    post:
+      summary: Create improvement suggestion
+      operationId: createImprovementSuggestion
+      tags:
+        - Improvements
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateImprovementSuggestionRequest'
+      responses:
+        '201':
+          description: Improvement suggestion created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateImprovementSuggestionResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Prompt not found
+
+  /prompts/{prompt_id}/versions/{version_id}/improvements:
+    get:
+      summary: List improvement suggestions for version
+      operationId: listSuggestionsForVersion
+      tags:
+        - Improvements
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: version_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of improvement suggestions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ImprovementSuggestionResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Version not found
+
+  /prompts/{prompt_id}/versions/{version_id}/improvements/{suggestion_id}/accept:
+    post:
+      summary: Accept improvement suggestion
+      operationId: acceptImprovementSuggestion
+      tags:
+        - Improvements
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: version_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: suggestion_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptImprovementSuggestionRequest'
+      responses:
+        '200':
+          description: Suggestion accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AcceptImprovementSuggestionResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Suggestion not found
+
+  /prompts/{prompt_id}/versions/{version_id}/improvements/{suggestion_id}/decline:
+    post:
+      summary: Decline improvement suggestion
+      operationId: declineImprovementSuggestion
+      tags:
+        - Improvements
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: version_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: suggestion_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeclineImprovementSuggestionRequest'
+      responses:
+        '200':
+          description: Suggestion declined
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Suggestion not found
+
+  /prompts/{prompt_id}/versions/{version_id}/analyze-feedback:
+    post:
+      summary: Analyze feedback and generate improvement suggestion
+      operationId: analyzeFeedback
+      tags:
+        - Improvements
+      parameters:
+        - name: prompt_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: version_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: AI suggestion generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyzeFeedbackResponse'
+        '400':
+          description: Bad request
+        '401':
+          description: Unauthorized
+        '404':
+          description: Version not found
 components:
   securitySchemes:
     UserIdHeader:
       type: apiKey
       in: header
       name: x-user-id
-      description: User ID for authentication (temporary until proper auth is implemented)
+      description: User ID for authentication (temporary)
     ApiKeyHeader:
       type: apiKey
       in: header
       name: x-api-key
-      description: API key for programmatic access (alternative to x-user-id)
+      description: API key for programmatic access
 
   schemas:
     PromptResponse:
@@ -654,6 +759,7 @@ components:
         - id
         - user_id
         - name
+        - prompt_type
         - created_at
         - updated_at
         - versions
@@ -662,26 +768,23 @@ components:
         id:
           type: string
           format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
         user_id:
           type: string
           format: uuid
-          example: "660e8400-e29b-41d4-a716-446655440001"
         name:
           type: string
-          example: "My First Prompt"
         description:
           type: string
           nullable: true
-          example: "Test prompt for MVP"
+        prompt_type:
+          type: string
+          enum: [system, user]
         created_at:
           type: string
           format: date-time
-          example: "2024-01-31T12:00:00Z"
         updated_at:
           type: string
           format: date-time
-          example: "2024-01-31T12:30:00Z"
         versions:
           type: array
           items:
@@ -698,48 +801,51 @@ components:
         - version
         - digest
         - content
+        - content_type
         - created_at
         - feedback_count
         - feedback
+        - improvement_suggestions
       properties:
         id:
           type: string
           format: uuid
-          example: "660e8400-e29b-41d4-a716-446655440000"
         version:
           type: string
           pattern: '^\d+\.\d+\.\d+$'
-          example: "0.0.1"
         digest:
           type: string
-          example: "sha256:a3b2c1d4e5f6..."
-          description: "SHA256 hash of the content"
+          description: SHA256 hash of the content
         content:
           type: string
-          example: "Hello {{name}}, you are a helpful assistant."
+        content_type:
+          type: string
+          enum: [static, template]
+        variables:
+          type: array
+          items:
+            type: string
+          nullable: true
         changelog:
           type: string
           nullable: true
-          example: "Initial version"
         created_at:
           type: string
           format: date-time
-          example: "2024-01-31T12:00:00Z"
         average_rating:
           type: number
           format: float
           nullable: true
-          example: 4.5
-          description: "Average rating from all feedback"
         feedback_count:
           type: integer
-          example: 10
-          description: "Number of feedback submissions"
         feedback:
           type: array
           items:
             $ref: '#/components/schemas/FeedbackResponse'
-          description: "List of feedback for this version"
+        improvement_suggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImprovementSuggestionResponse'
 
     TagResponse:
       type: object
@@ -752,18 +858,28 @@ components:
         id:
           type: string
           format: uuid
-          example: "770e8400-e29b-41d4-a716-446655440000"
         name:
           type: string
-          example: "latest"
         version_id:
           type: string
           format: uuid
-          example: "660e8400-e29b-41d4-a716-446655440000"
         updated_at:
           type: string
           format: date-time
-          example: "2024-01-31T12:30:00Z"
+
+    TestScenarioResponse:
+      type: object
+      required:
+        - input
+        - actual_output
+      properties:
+        input:
+          type: string
+        actual_output:
+          type: string
+        expected_output:
+          type: string
+          nullable: true
 
     FeedbackResponse:
       type: object
@@ -775,20 +891,19 @@ components:
         id:
           type: string
           format: uuid
-          example: "880e8400-e29b-41d4-a716-446655440000"
         rating:
           type: integer
           minimum: 1
           maximum: 5
-          example: 5
         comment:
           type: string
           nullable: true
-          example: "Works great!"
+        test_scenario:
+          $ref: '#/components/schemas/TestScenarioResponse'
+          nullable: true
         created_at:
           type: string
           format: date-time
-          example: "2024-01-31T12:00:00Z"
 
     ApiKeyResponse:
       type: object
@@ -802,40 +917,69 @@ components:
         id:
           type: string
           format: uuid
-          example: "990e8400-e29b-41d4-a716-446655440000"
         name:
           type: string
-          example: "Production n8n Integration"
         key_prefix:
           type: string
-          example: "pk_live_abc123"
-          description: "First few characters of the key for identification"
         last_used_at:
           type: string
           format: date-time
           nullable: true
-          example: "2024-01-31T14:30:00Z"
         created_at:
           type: string
           format: date-time
-          example: "2024-01-31T12:00:00Z"
         is_active:
           type: boolean
-          example: true
+
+    ImprovementSuggestionResponse:
+      type: object
+      required:
+        - id
+        - suggested_content
+        - ai_rationale
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        suggested_content:
+          type: string
+        ai_rationale:
+          type: string
+        status:
+          type: string
+          enum: [pending, accepted, declined]
+        decline_reason:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+        resulting_version_id:
+          type: string
+          format: uuid
+          nullable: true
 
     CreatePromptRequest:
       type: object
       required:
         - name
+        - prompt_type
       properties:
         name:
           type: string
-          example: "My First Prompt"
           minLength: 1
         description:
           type: string
           nullable: true
-          example: "Test prompt for MVP"
+        prompt_type:
+          type: string
+          enum: [system, user]
 
     CreatePromptResponse:
       type: object
@@ -845,7 +989,6 @@ components:
         id:
           type: string
           format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
 
     UpdatePromptRequest:
       type: object
@@ -853,31 +996,35 @@ components:
         name:
           type: string
           nullable: true
-          example: "Updated Prompt Name"
           minLength: 1
         description:
           type: string
           nullable: true
-          example: "Updated description"
 
     CreateVersionRequest:
       type: object
       required:
         - version
         - content
+        - content_type
       properties:
         version:
           type: string
           pattern: '^\d+\.\d+\.\d+$'
-          example: "0.0.1"
         content:
           type: string
-          example: "Hello {{name}}, you are a helpful assistant."
           minLength: 1
+        content_type:
+          type: string
+          enum: [static, template]
+        variables:
+          type: array
+          items:
+            type: string
+          nullable: true
         changelog:
           type: string
           nullable: true
-          example: "Initial version"
 
     CreateVersionResponse:
       type: object
@@ -887,7 +1034,22 @@ components:
         version_id:
           type: string
           format: uuid
-          example: "660e8400-e29b-41d4-a716-446655440000"
+
+    RenderVersionRequest:
+      type: object
+      properties:
+        context:
+          type: object
+          nullable: true
+          additionalProperties: true
+
+    RenderVersionResponse:
+      type: object
+      required:
+        - rendered_content
+      properties:
+        rendered_content:
+          type: string
 
     TagVersionRequest:
       type: object
@@ -897,12 +1059,10 @@ components:
       properties:
         tag_name:
           type: string
-          example: "latest"
           minLength: 1
         version_id:
           type: string
           format: uuid
-          example: "660e8400-e29b-41d4-a716-446655440000"
 
     SubmitFeedbackRequest:
       type: object
@@ -913,16 +1073,22 @@ components:
         version_id:
           type: string
           format: uuid
-          example: "660e8400-e29b-41d4-a716-446655440000"
         rating:
           type: integer
           minimum: 1
           maximum: 5
-          example: 5
         comment:
           type: string
           nullable: true
-          example: "Works great!"
+        test_input:
+          type: string
+          nullable: true
+        test_actual_output:
+          type: string
+          nullable: true
+        test_expected_output:
+          type: string
+          nullable: true
 
     SubmitFeedbackResponse:
       type: object
@@ -932,7 +1098,6 @@ components:
         feedback_id:
           type: string
           format: uuid
-          example: "770e8400-e29b-41d4-a716-446655440000"
 
     UpdateFeedbackRequest:
       type: object
@@ -942,11 +1107,9 @@ components:
           minimum: 1
           maximum: 5
           nullable: true
-          example: 4
         comment:
           type: string
           nullable: true
-          example: "Updated comment"
 
     CreateApiKeyRequest:
       type: object
@@ -955,9 +1118,7 @@ components:
       properties:
         name:
           type: string
-          example: "Production n8n Integration"
           minLength: 1
-          description: "Friendly name to identify this API key"
 
     CreateApiKeyResponse:
       type: object
@@ -969,11 +1130,75 @@ components:
         id:
           type: string
           format: uuid
-          example: "990e8400-e29b-41d4-a716-446655440000"
         api_key:
           type: string
-          example: "pk_live_1234567890abcdef1234567890abcdef"
-          description: "The actual API key - only shown once!"
         message:
           type: string
-          example: "Save this API key securely. You won't be able to see it again."
+
+    CreateImprovementSuggestionRequest:
+      type: object
+      required:
+        - version_id
+        - suggested_content
+        - ai_rationale
+      properties:
+        version_id:
+          type: string
+          format: uuid
+        suggested_content:
+          type: string
+        ai_rationale:
+          type: string
+
+    CreateImprovementSuggestionResponse:
+      type: object
+      required:
+        - suggestion_id
+      properties:
+        suggestion_id:
+          type: string
+          format: uuid
+
+    AcceptImprovementSuggestionRequest:
+      type: object
+      required:
+        - new_version
+      properties:
+        new_version:
+          type: string
+          pattern: '^\d+\.\d+\.\d+$'
+        changelog:
+          type: string
+          nullable: true
+
+    AcceptImprovementSuggestionResponse:
+      type: object
+      required:
+        - new_version_id
+      properties:
+        new_version_id:
+          type: string
+          format: uuid
+
+    DeclineImprovementSuggestionRequest:
+      type: object
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+
+    AnalyzeFeedbackResponse:
+      type: object
+      required:
+        - suggestion_id
+        - suggested_content
+        - ai_rationale
+      properties:
+        suggestion_id:
+          type: string
+          format: uuid
+        suggested_content:
+          type: string
+        ai_rationale:
+          type: string
