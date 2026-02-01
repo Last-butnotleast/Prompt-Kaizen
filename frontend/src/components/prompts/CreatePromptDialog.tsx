@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { CreatePromptRequest } from "@/types";
 
 interface CreatePromptDialogProps {
@@ -28,6 +29,7 @@ export function CreatePromptDialog({
 }: CreatePromptDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [promptType, setPromptType] = useState<"system" | "user">("user");
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,9 +45,11 @@ export function CreatePromptDialog({
       await onSubmit({
         name: name.trim(),
         description: description.trim() || null,
+        prompt_type: promptType,
       });
       setName("");
       setDescription("");
+      setPromptType("user");
     } catch (err) {
       setError("Failed to create prompt");
     }
@@ -57,6 +61,7 @@ export function CreatePromptDialog({
       if (!newOpen) {
         setName("");
         setDescription("");
+        setPromptType("user");
         setError("");
       }
     }
@@ -84,6 +89,34 @@ export function CreatePromptDialog({
                 autoFocus
               />
             </div>
+
+            <div className="grid gap-2">
+              <Label>Prompt Type *</Label>
+              <RadioGroup
+                value={promptType}
+                onValueChange={(value) =>
+                  setPromptType(value as "system" | "user")
+                }
+                disabled={isLoading}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="system" id="system" />
+                  <Label
+                    htmlFor="system"
+                    className="font-normal cursor-pointer"
+                  >
+                    System - Instructions for AI behavior
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="user" id="user" />
+                  <Label htmlFor="user" className="font-normal cursor-pointer">
+                    User - User-facing prompts
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
             <div className="grid gap-2">
               <Label htmlFor="description">Description</Label>
               <Textarea

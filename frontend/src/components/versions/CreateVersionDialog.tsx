@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { CreateVersionRequest } from "@/types";
 
 interface CreateVersionDialogProps {
@@ -31,7 +32,16 @@ export function CreateVersionDialog({
   const [version, setVersion] = useState("");
   const [content, setContent] = useState("");
   const [changelog, setChangelog] = useState("");
+  const [contentType, setContentType] = useState<"static" | "template">(
+    "static",
+  );
   const [error, setError] = useState("");
+
+  const extractedVariables = useMemo(() => {
+    if (contentType !== "template") return [];
+    const matches = content.matchAll(/\{\{(\w+)\}\}/g);
+    return Array.from(new Set(Array.from(matches, (m) => m[1])));
+  }, [content, contentType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,15 +63,25 @@ export function CreateVersionDialog({
       return;
     }
 
+    if (contentType === "template" && extractedVariables.length === 0) {
+      setError(
+        "Template must contain at least one variable in {{variable}} format",
+      );
+      return;
+    }
+
     try {
       await onSubmit({
         version: version.trim(),
         content: content.trim(),
+        content_type: contentType,
+        variables: contentType === "template" ? extractedVariables : null,
         changelog: changelog.trim() || null,
       });
       setVersion("");
       setContent("");
       setChangelog("");
+      setContentType("static");
     } catch (err) {
       setError("Failed to create version");
     }
@@ -74,6 +94,7 @@ export function CreateVersionDialog({
         setVersion("");
         setContent("");
         setChangelog("");
+        setContentType("static");
         setError("");
       }
     }
@@ -106,18 +127,60 @@ export function CreateVersionDialog({
                 Use semantic versioning (e.g., 0.0.1, 1.2.3)
               </p>
             </div>
+
+            <div className="grid gap-2">
+              <Label>Content Type *</Label>
+              <RadioGroup
+                value={contentType}
+                onValueChange={(value) =>
+                  setContentType(value as "static" | "template")
+                }
+                disabled={isLoading}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="static" id="static" />
+                  <Label
+                    htmlFor="static"
+                    className="font-normal cursor-pointer"
+                  >
+                    Static - Fixed content without variables
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="template" id="template" />
+                  <Label
+                    htmlFor="template"
+                    className="font-normal cursor-pointer"
+                  >
+                    Template - Contains variables like {`{{name}}`}
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
             <div className="grid gap-2">
               <Label htmlFor="content">Prompt Content *</Label>
               <Textarea
                 id="content"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Enter your prompt content here..."
+                placeholder={
+                  contentType === "template"
+                    ? "Enter your prompt with variables like {{name}}, {{topic}}..."
+                    : "Enter your prompt content here..."
+                }
                 disabled={isLoading}
                 rows={12}
                 className="font-mono text-sm"
               />
+              {contentType === "template" && extractedVariables.length > 0 && (
+                <div className="text-xs text-muted-foreground">
+                  <strong>Detected variables:</strong>{" "}
+                  {extractedVariables.join(", ")}
+                </div>
+              )}
             </div>
+
             <div className="grid gap-2">
               <Label htmlFor="changelog">Changelog</Label>
               <Textarea
