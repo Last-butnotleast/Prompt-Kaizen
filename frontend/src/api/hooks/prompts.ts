@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "../client";
-import type { CreatePromptResponse } from "@/types";
+import type { CreatePromptRequest } from "@/types";
 
 export const useListPrompts = () => {
   return useQuery({
@@ -30,10 +30,10 @@ export const useCreatePrompt = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { name: string; description?: string | null }) => {
+    mutationFn: async (data: CreatePromptRequest) => {
       const response = await apiClient.POST("/prompts", { body: data });
       if (response.error) throw new Error(response.error as string);
-      return response.data as CreatePromptResponse;
+      return response.data!;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });

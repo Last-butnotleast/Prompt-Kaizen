@@ -1,21 +1,18 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "../client";
+import type { SubmitFeedbackRequest, UpdateFeedbackRequest } from "@/types";
 
 export const useSubmitFeedback = (promptId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: {
-      version_id: string;
-      rating: number;
-      comment?: string | null;
-    }) => {
+    mutationFn: async (data: SubmitFeedbackRequest) => {
       const response = await apiClient.POST("/prompts/{prompt_id}/feedback", {
         params: { path: { prompt_id: promptId } },
         body: data,
       });
       if (response.error) throw new Error(response.error as string);
-      return response.data;
+      return response.data!;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts", promptId] });
@@ -28,11 +25,9 @@ export const useUpdateFeedback = (promptId: string, versionId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: {
-      feedback_id: string;
-      rating?: number | null;
-      comment?: string | null;
-    }) => {
+    mutationFn: async (
+      data: UpdateFeedbackRequest & { feedback_id: string },
+    ) => {
       const { feedback_id, ...body } = data;
       const response = await apiClient.PUT(
         "/prompts/{prompt_id}/versions/{version_id}/feedback/{feedback_id}",
@@ -44,7 +39,7 @@ export const useUpdateFeedback = (promptId: string, versionId: string) => {
         },
       );
       if (response.error) throw new Error(response.error as string);
-      return response.data;
+      return response.data!;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts", promptId] });
@@ -73,7 +68,7 @@ export const useDeleteFeedback = (promptId: string, versionId: string) => {
         },
       );
       if (response.error) throw new Error(response.error as string);
-      return response.data;
+      return response.data!;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts", promptId] });

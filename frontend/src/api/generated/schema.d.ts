@@ -50,7 +50,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Create a new version of a prompt */
+        /** Create a new version */
         post: operations["createVersion"];
         delete?: never;
         options?: never;
@@ -71,6 +71,23 @@ export interface paths {
         post?: never;
         /** Delete a version */
         delete: operations["deleteVersion"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prompts/{prompt_id}/versions/{version_id}/render": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Render a version with context variables */
+        post: operations["renderVersion"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -127,6 +144,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/prompts/{prompt_id}/tags/{tag_name}/render": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Render a version by tag with context variables */
+        post: operations["renderVersionByTag"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/prompts/{prompt_id}/feedback": {
         parameters: {
             query?: never;
@@ -136,7 +170,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Submit feedback for a prompt version */
+        /** Submit feedback for a version */
         post: operations["submitFeedback"];
         delete?: never;
         options?: never;
@@ -169,7 +203,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all API keys for the authenticated user */
+        /** List all API keys */
         get: operations["listApiKeys"];
         put?: never;
         /** Create a new API key */
@@ -197,222 +231,270 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/prompts/{prompt_id}/improvements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create improvement suggestion */
+        post: operations["createImprovementSuggestion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prompts/{prompt_id}/versions/{version_id}/improvements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List improvement suggestions for version */
+        get: operations["listSuggestionsForVersion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prompts/{prompt_id}/versions/{version_id}/improvements/{suggestion_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept improvement suggestion */
+        post: operations["acceptImprovementSuggestion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prompts/{prompt_id}/versions/{version_id}/improvements/{suggestion_id}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decline improvement suggestion */
+        post: operations["declineImprovementSuggestion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prompts/{prompt_id}/versions/{version_id}/analyze-feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Analyze feedback and generate improvement suggestion */
+        post: operations["analyzeFeedback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         PromptResponse: {
-            /**
-             * Format: uuid
-             * @example 550e8400-e29b-41d4-a716-446655440000
-             */
+            /** Format: uuid */
             id: string;
-            /**
-             * Format: uuid
-             * @example 660e8400-e29b-41d4-a716-446655440001
-             */
+            /** Format: uuid */
             user_id: string;
-            /** @example My First Prompt */
             name: string;
-            /** @example Test prompt for MVP */
             description?: string | null;
-            /**
-             * Format: date-time
-             * @example 2024-01-31T12:00:00Z
-             */
+            /** @enum {string} */
+            prompt_type: "system" | "user";
+            /** Format: date-time */
             created_at: string;
-            /**
-             * Format: date-time
-             * @example 2024-01-31T12:30:00Z
-             */
+            /** Format: date-time */
             updated_at: string;
             versions: components["schemas"]["VersionResponse"][];
             tags: components["schemas"]["TagResponse"][];
         };
         VersionResponse: {
-            /**
-             * Format: uuid
-             * @example 660e8400-e29b-41d4-a716-446655440000
-             */
+            /** Format: uuid */
             id: string;
-            /** @example 0.0.1 */
             version: string;
-            /**
-             * @description SHA256 hash of the content
-             * @example sha256:a3b2c1d4e5f6...
-             */
+            /** @description SHA256 hash of the content */
             digest: string;
-            /** @example Hello {{name}}, you are a helpful assistant. */
             content: string;
-            /** @example Initial version */
+            /** @enum {string} */
+            content_type: "static" | "template";
+            variables?: string[] | null;
             changelog?: string | null;
-            /**
-             * Format: date-time
-             * @example 2024-01-31T12:00:00Z
-             */
+            /** Format: date-time */
             created_at: string;
-            /**
-             * Format: float
-             * @description Average rating from all feedback
-             * @example 4.5
-             */
+            /** Format: float */
             average_rating?: number | null;
-            /**
-             * @description Number of feedback submissions
-             * @example 10
-             */
             feedback_count: number;
-            /** @description List of feedback for this version */
             feedback: components["schemas"]["FeedbackResponse"][];
+            improvement_suggestions: components["schemas"]["ImprovementSuggestionResponse"][];
         };
         TagResponse: {
-            /**
-             * Format: uuid
-             * @example 770e8400-e29b-41d4-a716-446655440000
-             */
+            /** Format: uuid */
             id: string;
-            /** @example latest */
             name: string;
-            /**
-             * Format: uuid
-             * @example 660e8400-e29b-41d4-a716-446655440000
-             */
+            /** Format: uuid */
             version_id: string;
-            /**
-             * Format: date-time
-             * @example 2024-01-31T12:30:00Z
-             */
+            /** Format: date-time */
             updated_at: string;
         };
+        TestScenarioResponse: {
+            input: string;
+            actual_output: string;
+            expected_output?: string | null;
+        };
         FeedbackResponse: {
-            /**
-             * Format: uuid
-             * @example 880e8400-e29b-41d4-a716-446655440000
-             */
+            /** Format: uuid */
             id: string;
-            /** @example 5 */
             rating: number;
-            /** @example Works great! */
             comment?: string | null;
-            /**
-             * Format: date-time
-             * @example 2024-01-31T12:00:00Z
-             */
+            test_scenario?: components["schemas"]["TestScenarioResponse"];
+            /** Format: date-time */
             created_at: string;
         };
         ApiKeyResponse: {
-            /**
-             * Format: uuid
-             * @example 990e8400-e29b-41d4-a716-446655440000
-             */
+            /** Format: uuid */
             id: string;
-            /** @example Production n8n Integration */
             name: string;
-            /**
-             * @description First few characters of the key for identification
-             * @example pk_live_abc123
-             */
             key_prefix: string;
-            /**
-             * Format: date-time
-             * @example 2024-01-31T14:30:00Z
-             */
+            /** Format: date-time */
             last_used_at?: string | null;
-            /**
-             * Format: date-time
-             * @example 2024-01-31T12:00:00Z
-             */
+            /** Format: date-time */
             created_at: string;
-            /** @example true */
             is_active: boolean;
         };
+        ImprovementSuggestionResponse: {
+            /** Format: uuid */
+            id: string;
+            suggested_content: string;
+            ai_rationale: string;
+            /** @enum {string} */
+            status: "pending" | "accepted" | "declined";
+            decline_reason?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            resolved_at?: string | null;
+            /** Format: uuid */
+            resulting_version_id?: string | null;
+        };
         CreatePromptRequest: {
-            /** @example My First Prompt */
             name: string;
-            /** @example Test prompt for MVP */
             description?: string | null;
+            /** @enum {string} */
+            prompt_type: "system" | "user";
         };
         CreatePromptResponse: {
-            /**
-             * Format: uuid
-             * @example 550e8400-e29b-41d4-a716-446655440000
-             */
+            /** Format: uuid */
             id: string;
         };
         UpdatePromptRequest: {
-            /** @example Updated Prompt Name */
             name?: string | null;
-            /** @example Updated description */
             description?: string | null;
         };
         CreateVersionRequest: {
-            /** @example 0.0.1 */
             version: string;
-            /** @example Hello {{name}}, you are a helpful assistant. */
             content: string;
-            /** @example Initial version */
+            /** @enum {string} */
+            content_type: "static" | "template";
+            variables?: string[] | null;
             changelog?: string | null;
         };
         CreateVersionResponse: {
-            /**
-             * Format: uuid
-             * @example 660e8400-e29b-41d4-a716-446655440000
-             */
+            /** Format: uuid */
             version_id: string;
         };
+        RenderVersionRequest: {
+            context?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        RenderVersionResponse: {
+            rendered_content: string;
+        };
         TagVersionRequest: {
-            /** @example latest */
             tag_name: string;
-            /**
-             * Format: uuid
-             * @example 660e8400-e29b-41d4-a716-446655440000
-             */
+            /** Format: uuid */
             version_id: string;
         };
         SubmitFeedbackRequest: {
-            /**
-             * Format: uuid
-             * @example 660e8400-e29b-41d4-a716-446655440000
-             */
+            /** Format: uuid */
             version_id: string;
-            /** @example 5 */
             rating: number;
-            /** @example Works great! */
             comment?: string | null;
+            test_input?: string | null;
+            test_actual_output?: string | null;
+            test_expected_output?: string | null;
         };
         SubmitFeedbackResponse: {
-            /**
-             * Format: uuid
-             * @example 770e8400-e29b-41d4-a716-446655440000
-             */
+            /** Format: uuid */
             feedback_id: string;
         };
         UpdateFeedbackRequest: {
-            /** @example 4 */
             rating?: number | null;
-            /** @example Updated comment */
             comment?: string | null;
         };
         CreateApiKeyRequest: {
-            /**
-             * @description Friendly name to identify this API key
-             * @example Production n8n Integration
-             */
             name: string;
         };
         CreateApiKeyResponse: {
-            /**
-             * Format: uuid
-             * @example 990e8400-e29b-41d4-a716-446655440000
-             */
+            /** Format: uuid */
             id: string;
-            /**
-             * @description The actual API key - only shown once!
-             * @example pk_live_1234567890abcdef1234567890abcdef
-             */
             api_key: string;
-            /** @example Save this API key securely. You won't be able to see it again. */
             message: string;
+        };
+        CreateImprovementSuggestionRequest: {
+            /** Format: uuid */
+            version_id: string;
+            suggested_content: string;
+            ai_rationale: string;
+        };
+        CreateImprovementSuggestionResponse: {
+            /** Format: uuid */
+            suggestion_id: string;
+        };
+        AcceptImprovementSuggestionRequest: {
+            new_version: string;
+            changelog?: string | null;
+        };
+        AcceptImprovementSuggestionResponse: {
+            /** Format: uuid */
+            new_version_id: string;
+        };
+        DeclineImprovementSuggestionRequest: {
+            reason: string;
+        };
+        AnalyzeFeedbackResponse: {
+            /** Format: uuid */
+            suggestion_id: string;
+            suggested_content: string;
+            ai_rationale: string;
         };
     };
     responses: never;
@@ -441,23 +523,19 @@ export interface operations {
                     "application/json": components["schemas"]["PromptResponse"][];
                 };
             };
-            /** @description Unauthorized - Missing or invalid user ID */
+            /** @description Unauthorized */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
             /** @description Internal server error */
             500: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
         };
     };
@@ -488,18 +566,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
-            /** @description Unauthorized - Missing or invalid user ID */
+            /** @description Unauthorized */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
         };
     };
@@ -523,23 +597,19 @@ export interface operations {
                     "application/json": components["schemas"]["PromptResponse"];
                 };
             };
-            /** @description Unauthorized - Missing or invalid user ID */
+            /** @description Unauthorized */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
-            /** @description Prompt not found or not owned by user */
+            /** @description Prompt not found */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
         };
     };
@@ -570,27 +640,21 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
-            /** @description Unauthorized - Missing or invalid user ID */
+            /** @description Unauthorized */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
-            /** @description Prompt not found or not owned by user */
+            /** @description Prompt not found */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
         };
     };
@@ -612,23 +676,19 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Unauthorized - Missing or invalid user ID */
+            /** @description Unauthorized */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
-            /** @description Prompt not found or not owned by user */
+            /** @description Prompt not found */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
         };
     };
@@ -661,27 +721,21 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
-            /** @description Unauthorized - Missing or invalid user ID */
+            /** @description Unauthorized */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
-            /** @description Prompt not found or not owned by user */
+            /** @description Prompt not found */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
         };
     };
@@ -706,23 +760,19 @@ export interface operations {
                     "application/json": components["schemas"]["VersionResponse"];
                 };
             };
-            /** @description Unauthorized - Missing or invalid user ID */
+            /** @description Unauthorized */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
-            /** @description Version not found or prompt not owned by user */
+            /** @description Version not found */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
         };
     };
@@ -745,23 +795,67 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Unauthorized - Missing or invalid user ID */
+            /** @description Unauthorized */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
-            /** @description Version not found or prompt not owned by user */
+            /** @description Version not found */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
+                content?: never;
+            };
+        };
+    };
+    renderVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prompt_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenderVersionRequest"];
+            };
+        };
+        responses: {
+            /** @description Rendered content */
+            200: {
+                headers: {
+                    [name: string]: unknown;
                 };
+                content: {
+                    "application/json": components["schemas"]["RenderVersionResponse"];
+                };
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Version not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -792,27 +886,21 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
-            /** @description Unauthorized - Missing or invalid user ID */
+            /** @description Unauthorized */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
-            /** @description Prompt not found or not owned by user */
+            /** @description Prompt not found */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
         };
     };
@@ -835,23 +923,19 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Unauthorized - Missing or invalid user ID */
+            /** @description Unauthorized */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
-            /** @description Tag not found or prompt not owned by user */
+            /** @description Tag not found */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
         };
     };
@@ -876,23 +960,67 @@ export interface operations {
                     "application/json": components["schemas"]["VersionResponse"];
                 };
             };
-            /** @description Unauthorized - Missing or invalid user ID */
+            /** @description Unauthorized */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
-            /** @description Tag or version not found, or prompt not owned by user */
+            /** @description Tag or version not found */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
+                content?: never;
+            };
+        };
+    };
+    renderVersionByTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prompt_id: string;
+                tag_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RenderVersionRequest"];
+            };
+        };
+        responses: {
+            /** @description Rendered content */
+            200: {
+                headers: {
+                    [name: string]: unknown;
                 };
+                content: {
+                    "application/json": components["schemas"]["RenderVersionResponse"];
+                };
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Tag not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -925,27 +1053,21 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
-            /** @description Unauthorized - Missing or invalid user ID */
+            /** @description Unauthorized */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
-            /** @description Prompt not found or not owned by user */
+            /** @description Prompt not found */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
         };
     };
@@ -978,27 +1100,21 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
-            /** @description Unauthorized - Missing or invalid user ID */
+            /** @description Unauthorized */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
-            /** @description Feedback not found or prompt not owned by user */
+            /** @description Feedback not found */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
         };
     };
@@ -1022,23 +1138,19 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Unauthorized - Missing or invalid user ID */
+            /** @description Unauthorized */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
-            /** @description Feedback not found or prompt not owned by user */
+            /** @description Feedback not found */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
         };
     };
@@ -1060,23 +1172,19 @@ export interface operations {
                     "application/json": components["schemas"]["ApiKeyResponse"][];
                 };
             };
-            /** @description Unauthorized - Missing or invalid user ID */
+            /** @description Unauthorized */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
             /** @description Internal server error */
             500: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
         };
     };
@@ -1107,18 +1215,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
-            /** @description Unauthorized - Missing or invalid user ID */
+            /** @description Unauthorized */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
         };
     };
@@ -1140,23 +1244,243 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Unauthorized - Missing or invalid user ID */
+            /** @description Unauthorized */
             401: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
-                };
+                content?: never;
             };
-            /** @description API key not found or not owned by user */
+            /** @description API key not found */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "text/plain": string;
+                content?: never;
+            };
+        };
+    };
+    createImprovementSuggestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prompt_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateImprovementSuggestionRequest"];
+            };
+        };
+        responses: {
+            /** @description Improvement suggestion created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
                 };
+                content: {
+                    "application/json": components["schemas"]["CreateImprovementSuggestionResponse"];
+                };
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Prompt not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listSuggestionsForVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prompt_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of improvement suggestions */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImprovementSuggestionResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Version not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    acceptImprovementSuggestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prompt_id: string;
+                version_id: string;
+                suggestion_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptImprovementSuggestionRequest"];
+            };
+        };
+        responses: {
+            /** @description Suggestion accepted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcceptImprovementSuggestionResponse"];
+                };
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Suggestion not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    declineImprovementSuggestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prompt_id: string;
+                version_id: string;
+                suggestion_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeclineImprovementSuggestionRequest"];
+            };
+        };
+        responses: {
+            /** @description Suggestion declined */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Suggestion not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    analyzeFeedback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prompt_id: string;
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description AI suggestion generated */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyzeFeedbackResponse"];
+                };
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Version not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

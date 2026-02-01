@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "../client";
+import type { CreateVersionRequest } from "@/types";
 
 export const useGetVersion = (promptId: string, versionId: string) => {
   return useQuery({
@@ -12,7 +13,7 @@ export const useGetVersion = (promptId: string, versionId: string) => {
         },
       );
       if (response.error) throw new Error(response.error as string);
-      return response.data;
+      return response.data!;
     },
   });
 };
@@ -21,17 +22,13 @@ export const useCreateVersion = (promptId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: {
-      version: string;
-      content: string;
-      changelog?: string | null;
-    }) => {
+    mutationFn: async (data: CreateVersionRequest) => {
       const response = await apiClient.POST("/prompts/{prompt_id}/versions", {
         params: { path: { prompt_id: promptId } },
         body: data,
       });
       if (response.error) throw new Error(response.error as string);
-      return response.data;
+      return response.data!;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts", promptId] });
@@ -52,7 +49,7 @@ export const useDeleteVersion = (promptId: string) => {
         },
       );
       if (response.error) throw new Error(response.error as string);
-      return response.data;
+      return response.data!;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts", promptId] });
