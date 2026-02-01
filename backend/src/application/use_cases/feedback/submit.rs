@@ -1,4 +1,5 @@
 use crate::application::PromptRepository;
+use crate::domain::prompt::TestScenario;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -18,6 +19,9 @@ impl SubmitFeedback {
         version_id: Uuid,
         rating: u8,
         comment: Option<String>,
+        input: Option<String>,
+        actual_output: Option<String>,
+        expected_output: Option<String>,
     ) -> Result<Uuid, String> {
         let mut prompt = self.repository
             .find_by_id_and_user(prompt_id, user_id)
@@ -29,8 +33,14 @@ impl SubmitFeedback {
             .find(|v| v.id() == version_id)
             .ok_or_else(|| "Version not found".to_string())?;
 
+        let test_scenario = match (input, actual_output) {
+            (Some(inp), Some(out)) => Some(TestScenario::new(inp, out, expected_output)?),
+            (None, None) => None,
+            _ => return Err("Both input and actual_output are required for test scenario".to_string()),
+        };
+
         let feedback_id = Uuid::new_v4();
-        version.add_feedback(feedback_id, rating, comment)?;
+        version.add_feedback(feedback_id, rating, comment, test_scenario)?;
         self.repository.save(&prompt).await?;
         Ok(feedback_id)
     }

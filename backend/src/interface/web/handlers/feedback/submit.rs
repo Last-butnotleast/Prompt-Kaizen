@@ -17,6 +17,9 @@ pub struct SubmitFeedbackRequest {
     pub version_id: String,
     pub rating: u8,
     pub comment: Option<String>,
+    pub test_input: Option<String>,
+    pub test_actual_output: Option<String>,
+    pub test_expected_output: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -36,7 +39,16 @@ pub async fn submit_feedback(
 
     let feedback_id = state
         .submit_feedback
-        .execute(prompt_uuid, user_id, version_uuid, payload.rating, payload.comment)
+        .execute(
+            prompt_uuid,
+            user_id,
+            version_uuid,
+            payload.rating,
+            payload.comment,
+            payload.test_input,
+            payload.test_actual_output,
+            payload.test_expected_output,
+        )
         .await
         .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
 

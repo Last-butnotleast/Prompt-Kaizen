@@ -1,5 +1,5 @@
 use crate::application::PromptRepository;
-use crate::domain::prompt::{Prompt, PromptVersion, Tag, Feedback, Version, PromptType, ContentType};
+use crate::domain::prompt::{Prompt, PromptVersion, Tag, Feedback, TestScenario, Version, PromptType, ContentType};
 use async_trait::async_trait;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
@@ -59,6 +59,7 @@ impl PostgresPromptRepository {
                     feedback.id(),
                     feedback.rating(),
                     feedback.comment().map(|s| s.to_string()),
+                    feedback.test_scenario().cloned(),
                 );
             }
 
@@ -96,7 +97,7 @@ impl PostgresPromptRepository {
 
     async fn fetch_feedbacks(&self, version_id: Uuid) -> Result<Vec<Feedback>, String> {
         let rows = sqlx::query(
-            "SELECT id, version_id, rating, comment, created_at
+            "SELECT id, version_id, rating, comment, test_input, test_actual_output, test_expected_output, created_at
              FROM feedbacks WHERE version_id = $1 ORDER BY created_at"
         )
             .bind(version_id)
@@ -109,11 +110,23 @@ impl PostgresPromptRepository {
                 let id: Uuid = row.try_get("id").map_err(|e| e.to_string())?;
                 let version_id: Uuid = row.try_get("version_id").map_err(|e| e.to_string())?;
 
+                let test_scenario = match (
+                    row.try_get::<Option<String>, _>("test_input").map_err(|e| e.to_string())?,
+                    row.try_get::<Option<String>, _>("test_actual_output").map_err(|e| e.to_string())?,
+                ) {
+                    (Some(input), Some(actual_output)) => {
+                        let expected_output = row.try_get("test_expected_output").map_err(|e| e.to_string())?;
+                        Some(TestScenario::new(input, actual_output, expected_output)?)
+                    }
+                    _ => None,
+                };
+
                 Feedback::new(
                     id,
                     version_id,
                     row.try_get::<i16, _>("rating").map_err(|e| e.to_string())? as u8,
                     row.try_get("comment").map_err(|e| e.to_string())?,
+                    test_scenario,
                 )
             })
             .collect()
@@ -188,14 +201,28 @@ impl PostgresPromptRepository {
             .map_err(|e| format!("Failed to delete feedbacks: {}", e))?;
 
         for feedback in feedbacks {
+            let (test_input, test_actual_output, test_expected_output) =
+                if let Some(scenario) = feedback.test_scenario() {
+                    (
+                        Some(scenario.input()),
+                        Some(scenario.actual_output()),
+                        scenario.expected_output(),
+                    )
+                } else {
+                    (None, None, None)
+                };
+
             sqlx::query(
-                "INSERT INTO feedbacks (id, version_id, rating, comment, created_at)
-             VALUES ($1, $2, $3, $4, $5)"
+                "INSERT INTO feedbacks (id, version_id, rating, comment, test_input, test_actual_output, test_expected_output, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
             )
                 .bind(feedback.id())
                 .bind(version_id)
                 .bind(feedback.rating() as i16)
                 .bind(feedback.comment())
+                .bind(test_input)
+                .bind(test_actual_output)
+                .bind(test_expected_output)
                 .bind(feedback.created_at())
                 .execute(&self.pool)
                 .await

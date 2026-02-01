@@ -40,10 +40,18 @@ pub struct TagResponse {
 }
 
 #[derive(Serialize)]
+pub struct TestScenarioResponse {
+    pub input: String,
+    pub actual_output: String,
+    pub expected_output: Option<String>,
+}
+
+#[derive(Serialize)]
 pub struct FeedbackResponse {
     pub id: String,
     pub rating: u8,
     pub comment: Option<String>,
+    pub test_scenario: Option<TestScenarioResponse>,
     pub created_at: DateTime<Utc>,
 }
 
@@ -108,6 +116,11 @@ impl From<&Feedback> for FeedbackResponse {
             id: feedback.id().to_string(),
             rating: feedback.rating(),
             comment: feedback.comment().map(|s| s.to_string()),
+            test_scenario: feedback.test_scenario().map(|ts| TestScenarioResponse {
+                input: ts.input().to_string(),
+                actual_output: ts.actual_output().to_string(),
+                expected_output: ts.expected_output().map(|s| s.to_string()),
+            }),
             created_at: feedback.created_at(),
         }
     }

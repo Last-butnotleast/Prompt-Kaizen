@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use sha2::{Sha256, Digest as Sha2Digest};
 use uuid::Uuid;
-use super::{Feedback, Version, ContentType};
+use super::{Feedback, TestScenario, Version, ContentType};
 
 #[derive(Debug, Clone)]
 pub struct PromptVersion {
@@ -105,8 +105,9 @@ impl PromptVersion {
         feedback_id: Uuid,
         rating: u8,
         comment: Option<String>,
+        test_scenario: Option<TestScenario>,
     ) -> Result<&Feedback, String> {
-        let feedback = Feedback::new(feedback_id, self.id, rating, comment)?;
+        let feedback = Feedback::new(feedback_id, self.id, rating, comment, test_scenario)?;
         self.feedbacks.push(feedback);
         Ok(self.feedbacks.last().unwrap())
     }
