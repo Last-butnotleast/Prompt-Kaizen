@@ -28,7 +28,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
     <Sidebar>
       <SidebarHeader className="border-b px-6 py-4">
         <div className="flex items-center gap-2">
-          <img src="/raccoon.png" alt="Logo" width={32} height={32} />
+          <img src="/raccoon.svg" alt="Logo" width={32} height={32} />
           <span className="font-bold text-lg">Prompt Kaizen</span>
         </div>
       </SidebarHeader>

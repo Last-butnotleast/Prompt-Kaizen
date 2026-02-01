@@ -56,7 +56,7 @@ export function LoginPage() {
           to="/"
           className="flex items-center gap-3 hover:opacity-80 transition-opacity"
         >
-          <img src="/raccoon.png" alt="Logo" width={40} height={40} />
+          <img src="/raccoon.svg" alt="Logo" width={40} height={40} />
           <span className="text-xl font-bold">Prompt Kaizen</span>
         </Link>
       </nav>
@@ -65,7 +65,7 @@ export function LoginPage() {
         <div className="flex flex-col gap-8 justify-center items-center max-w-md mx-auto px-6">
           <div className="text-center">
             <img
-              src="/raccoon.png"
+              src="/raccoon.svg"
               alt="Prompt Kaizen Logo"
               width={96}
               height={96}

@@ -5,7 +5,7 @@ export function Homepage() {
     <div className="min-h-screen bg-linear-to-b from-white to-gray-50">
       <nav className="container mx-auto px-6 py-6 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <img src="/raccoon.png" alt="Logo" width={40} height={40} />
+          <img src="/raccoon.svg" alt="Logo" width={40} height={40} />
           <span className="text-xl font-bold">Prompt Kaizen</span>
         </div>
         <Link
@@ -19,7 +19,7 @@ export function Homepage() {
       <main className="container mx-auto px-6">
         <section className="max-w-4xl mx-auto text-center py-20">
           <img
-            src="/raccoon.png"
+            src="/raccoon.svg"
             alt="Prompt Kaizen"
             width={128}
             height={128}
