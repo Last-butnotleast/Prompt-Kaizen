@@ -7,6 +7,7 @@ pub mod version;
 pub mod tag;
 pub mod feedback;
 pub mod api_key;
+pub mod improvement;
 
 pub use app_state::AppState;
 pub use auth::extract_user_id;

@@ -1,5 +1,5 @@
 use crate::application::PromptRepository;
-use crate::domain::prompt::{Prompt, PromptVersion, Tag, Feedback, TestScenario, Version, PromptType, ContentType};
+use crate::domain::prompt::{Prompt, PromptVersion, Tag, Feedback, TestScenario, Version, PromptType, ContentType, ImprovementSuggestion, SuggestionStatus};
 use async_trait::async_trait;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
@@ -29,6 +29,7 @@ impl PostgresPromptRepository {
             let prompt_id: Uuid = row.try_get("prompt_id").map_err(|e| e.to_string())?;
 
             let feedbacks = self.fetch_feedbacks(version_id).await?;
+            let suggestions = self.fetch_improvement_suggestions(version_id).await?;
 
             let version_string: String = row.try_get("version").map_err(|e| e.to_string())?;
             let version = Version::from_str(&version_string)?;
@@ -61,6 +62,10 @@ impl PostgresPromptRepository {
                     feedback.comment().map(|s| s.to_string()),
                     feedback.test_scenario().cloned(),
                 );
+            }
+
+            for suggestion in suggestions {
+                version.improvement_suggestions_mut().push(suggestion);
             }
 
             versions.push(version);
@@ -132,6 +137,56 @@ impl PostgresPromptRepository {
             .collect()
     }
 
+    async fn fetch_improvement_suggestions(&self, version_id: Uuid) -> Result<Vec<ImprovementSuggestion>, String> {
+        let rows = sqlx::query(
+            "SELECT id, source_version_id, suggested_content, ai_rationale, status, decline_reason, created_at, resolved_at, resulting_version_id
+         FROM improvement_suggestions WHERE source_version_id = $1 ORDER BY created_at"
+        )
+            .bind(version_id)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to fetch improvement suggestions: {}", e))?;
+
+        rows.iter()
+            .map(|row| {
+                let id: Uuid = row.try_get("id").map_err(|e| e.to_string())?;
+                let source_version_id: Uuid = row.try_get("source_version_id").map_err(|e| e.to_string())?;
+                let suggested_content: String = row.try_get("suggested_content").map_err(|e| e.to_string())?;
+                let ai_rationale: String = row.try_get("ai_rationale").map_err(|e| e.to_string())?;
+
+                let status_str: String = row.try_get("status").map_err(|e| e.to_string())?;
+                let status = match status_str.as_str() {
+                    "pending" => SuggestionStatus::Pending,
+                    "accepted" => SuggestionStatus::Accepted,
+                    "declined" => SuggestionStatus::Declined,
+                    _ => return Err("Invalid suggestion status".to_string()),
+                };
+
+                let mut suggestion = ImprovementSuggestion::new(
+                    id,
+                    source_version_id,
+                    suggested_content,
+                    ai_rationale,
+                );
+
+                if status == SuggestionStatus::Accepted {
+                    let resulting_version_id: Option<Uuid> = row.try_get("resulting_version_id")
+                        .map_err(|e| e.to_string())?;
+                    let resulting_version_id = resulting_version_id
+                        .ok_or("Accepted suggestion missing resulting_version_id")?;
+                    suggestion.accept(resulting_version_id)?;
+                } else if status == SuggestionStatus::Declined {
+                    let reason: Option<String> = row.try_get("decline_reason")
+                        .map_err(|e| e.to_string())?;
+                    let reason = reason.ok_or("Declined suggestion missing reason")?;
+                    suggestion.decline(reason)?;
+                }
+
+                Ok(suggestion)
+            })
+            .collect()
+    }
+
     async fn save_versions(&self, prompt_id: Uuid, versions: &[PromptVersion]) -> Result<(), String> {
         sqlx::query("DELETE FROM versions WHERE prompt_id = $1")
             .bind(prompt_id)
@@ -165,6 +220,7 @@ impl PostgresPromptRepository {
                 .map_err(|e| format!("Failed to save version: {}", e))?;
 
             self.save_feedbacks(version.id(), version.feedbacks()).await?;
+            self.save_improvement_suggestions(version.id(), version.improvement_suggestions()).await?;
         }
         Ok(())
     }
@@ -227,6 +283,40 @@ impl PostgresPromptRepository {
                 .execute(&self.pool)
                 .await
                 .map_err(|e| format!("Failed to save feedback: {}", e))?;
+        }
+        Ok(())
+    }
+
+    async fn save_improvement_suggestions(&self, version_id: Uuid, suggestions: &[ImprovementSuggestion]) -> Result<(), String> {
+        sqlx::query("DELETE FROM improvement_suggestions WHERE source_version_id = $1")
+            .bind(version_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to delete improvement suggestions: {}", e))?;
+
+        for suggestion in suggestions {
+            let status_str = match suggestion.status() {
+                SuggestionStatus::Pending => "pending",
+                SuggestionStatus::Accepted => "accepted",
+                SuggestionStatus::Declined => "declined",
+            };
+
+            sqlx::query(
+                "INSERT INTO improvement_suggestions (id, source_version_id, suggested_content, ai_rationale, status, decline_reason, created_at, resolved_at, resulting_version_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
+            )
+                .bind(suggestion.id())
+                .bind(suggestion.source_version_id())
+                .bind(suggestion.suggested_content())
+                .bind(suggestion.ai_rationale())
+                .bind(status_str)
+                .bind(suggestion.decline_reason())
+                .bind(suggestion.created_at())
+                .bind(suggestion.resolved_at())
+                .bind(suggestion.resulting_version_id())
+                .execute(&self.pool)
+                .await
+                .map_err(|e| format!("Failed to save improvement suggestion: {}", e))?;
         }
         Ok(())
     }

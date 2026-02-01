@@ -6,6 +6,8 @@ pub mod feedback;
 pub mod test_scenario;
 pub mod prompt_type;
 pub mod content_type;
+pub mod improvement_suggestion;
+pub mod suggestion_status;
 
 pub use prompt::Prompt;
 pub use version::PromptVersion;
@@ -15,3 +17,5 @@ pub use feedback::Feedback;
 pub use test_scenario::TestScenario;
 pub use prompt_type::PromptType;
 pub use content_type::ContentType;
+pub use improvement_suggestion::ImprovementSuggestion;
+pub use suggestion_status::SuggestionStatus;

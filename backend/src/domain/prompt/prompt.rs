@@ -203,4 +203,45 @@ impl Prompt {
 
         version.delete_feedback(feedback_id)
     }
+
+    pub fn accept_improvement(
+        &mut self,
+        source_version_id: Uuid,
+        suggestion_id: Uuid,
+        new_version_id: Uuid,
+        new_version_number: Version,
+        changelog: Option<String>,
+    ) -> Result<&PromptVersion, String> {
+        let source_version = self.versions.iter()
+            .find(|v| v.id() == source_version_id)
+            .ok_or("Source version not found")?;
+
+        let suggestion = source_version.find_suggestion(suggestion_id)
+            .ok_or("Suggestion not found")?;
+
+        if suggestion.status() != super::SuggestionStatus::Pending {
+            return Err("Can only accept pending suggestions".to_string());
+        }
+
+        let new_version = PromptVersion::new(
+            new_version_id,
+            self.id,
+            new_version_number,
+            suggestion.suggested_content().to_string(),
+            source_version.content_type(),
+            source_version.variables().map(|v| v.to_vec()),
+            changelog,
+        );
+
+        self.versions.push(new_version);
+        self.updated_at = Utc::now();
+
+        let source_version_mut = self.versions.iter_mut()
+            .find(|v| v.id() == source_version_id)
+            .unwrap();
+
+        source_version_mut.accept_suggestion(suggestion_id, new_version_id)?;
+
+        Ok(self.versions.last().unwrap())
+    }
 }

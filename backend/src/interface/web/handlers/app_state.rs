@@ -27,5 +27,10 @@ pub struct AppState {
     pub list_api_keys: Arc<ListApiKeys>,
     pub delete_api_key: Arc<DeleteApiKey>,
 
+    pub create_improvement_suggestion: Arc<CreateImprovementSuggestion>,
+    pub accept_improvement_suggestion: Arc<AcceptImprovementSuggestion>,
+    pub decline_improvement_suggestion: Arc<DeclineImprovementSuggestion>,
+    pub get_suggestions_for_version: Arc<GetSuggestionsForVersion>,
+
     pub api_key_repository: Arc<dyn ApiKeyRepository>,
 }

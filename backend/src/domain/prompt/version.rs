@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use sha2::{Sha256, Digest as Sha2Digest};
 use uuid::Uuid;
-use super::{Feedback, TestScenario, Version, ContentType};
+use super::{Feedback, TestScenario, Version, ContentType, ImprovementSuggestion};
 
 #[derive(Debug, Clone)]
 pub struct PromptVersion {
@@ -15,6 +15,7 @@ pub struct PromptVersion {
     changelog: Option<String>,
     created_at: DateTime<Utc>,
     feedbacks: Vec<Feedback>,
+    improvement_suggestions: Vec<ImprovementSuggestion>,
 }
 
 impl PromptVersion {
@@ -39,6 +40,7 @@ impl PromptVersion {
             changelog,
             created_at: Utc::now(),
             feedbacks: Vec::new(),
+            improvement_suggestions: Vec::new(),
         }
     }
 
@@ -197,5 +199,57 @@ impl PromptVersion {
         }
 
         Ok(vars.into_iter().collect())
+    }
+
+    pub fn improvement_suggestions(&self) -> &[ImprovementSuggestion] {
+        &self.improvement_suggestions
+    }
+
+    pub fn create_improvement_suggestion(
+        &mut self,
+        suggestion_id: Uuid,
+        suggested_content: String,
+        ai_rationale: String,
+    ) -> Result<&ImprovementSuggestion, String> {
+        let suggestion = ImprovementSuggestion::new(
+            suggestion_id,
+            self.id,
+            suggested_content,
+            ai_rationale,
+        );
+        self.improvement_suggestions.push(suggestion);
+        Ok(self.improvement_suggestions.last().unwrap())
+    }
+
+    pub fn accept_suggestion(
+        &mut self,
+        suggestion_id: Uuid,
+        resulting_version_id: Uuid,
+    ) -> Result<(), String> {
+        let suggestion = self.improvement_suggestions.iter_mut()
+            .find(|s| s.id() == suggestion_id)
+            .ok_or("Suggestion not found")?;
+
+        suggestion.accept(resulting_version_id)
+    }
+
+    pub fn decline_suggestion(
+        &mut self,
+        suggestion_id: Uuid,
+        reason: String,
+    ) -> Result<(), String> {
+        let suggestion = self.improvement_suggestions.iter_mut()
+            .find(|s| s.id() == suggestion_id)
+            .ok_or("Suggestion not found")?;
+
+        suggestion.decline(reason)
+    }
+
+    pub fn find_suggestion(&self, suggestion_id: Uuid) -> Option<&ImprovementSuggestion> {
+        self.improvement_suggestions.iter().find(|s| s.id() == suggestion_id)
+    }
+
+    pub fn improvement_suggestions_mut(&mut self) -> &mut Vec<ImprovementSuggestion> {
+        &mut self.improvement_suggestions
     }
 }

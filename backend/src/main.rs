@@ -51,6 +51,11 @@ async fn main() {
     let update_feedback = Arc::new(UpdateFeedback::new(prompt_repository.clone()));
     let delete_feedback = Arc::new(DeleteFeedback::new(prompt_repository.clone()));
 
+    let create_improvement_suggestion = Arc::new(CreateImprovementSuggestion::new(prompt_repository.clone()));
+    let accept_improvement_suggestion = Arc::new(AcceptImprovementSuggestion::new(prompt_repository.clone()));
+    let decline_improvement_suggestion = Arc::new(DeclineImprovementSuggestion::new(prompt_repository.clone()));
+    let get_suggestions_for_version = Arc::new(GetSuggestionsForVersion::new(prompt_repository.clone()));
+
     let create_api_key = Arc::new(CreateApiKey::new(api_key_repository.clone()));
     let list_api_keys = Arc::new(ListApiKeys::new(api_key_repository.clone()));
     let delete_api_key = Arc::new(DeleteApiKey::new(api_key_repository.clone()));
@@ -75,6 +80,10 @@ async fn main() {
         create_api_key,
         list_api_keys,
         delete_api_key,
+        create_improvement_suggestion,
+        accept_improvement_suggestion,
+        decline_improvement_suggestion,
+        get_suggestions_for_version,
         api_key_repository,
     });
 

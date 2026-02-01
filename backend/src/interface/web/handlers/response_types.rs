@@ -1,7 +1,7 @@
 use serde::Serialize;
 use chrono::{DateTime, Utc};
 use crate::domain::api_key::ApiKey;
-use crate::domain::prompt::{Prompt, PromptVersion, Tag, Feedback, PromptType, ContentType};
+use crate::domain::prompt::{Prompt, PromptVersion, Tag, Feedback, PromptType, ContentType, ImprovementSuggestion, SuggestionStatus};
 
 #[derive(Serialize)]
 pub struct PromptResponse {
@@ -29,6 +29,7 @@ pub struct VersionResponse {
     pub average_rating: Option<f64>,
     pub feedback_count: usize,
     pub feedback: Vec<FeedbackResponse>,
+    pub improvement_suggestions: Vec<ImprovementSuggestionResponse>,
 }
 
 #[derive(Serialize)]
@@ -95,6 +96,7 @@ impl From<&PromptVersion> for VersionResponse {
             average_rating: version.average_rating(),
             feedback_count: version.feedbacks().len(),
             feedback: version.feedbacks().iter().map(FeedbackResponse::from).collect(),
+            improvement_suggestions: version.improvement_suggestions().iter().map(ImprovementSuggestionResponse::from).collect(),
         }
     }
 }
@@ -145,6 +147,39 @@ impl From<&ApiKey> for ApiKeyResponse {
             last_used_at: api_key.last_used_at(),
             created_at: api_key.created_at(),
             is_active: api_key.is_active(),
+        }
+    }
+}
+
+#[derive(Serialize)]
+pub struct ImprovementSuggestionResponse {
+    pub id: String,
+    pub suggested_content: String,
+    pub ai_rationale: String,
+    pub status: String,
+    pub decline_reason: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub resolved_at: Option<DateTime<Utc>>,
+    pub resulting_version_id: Option<String>,
+}
+
+impl From<&ImprovementSuggestion> for ImprovementSuggestionResponse {
+    fn from(suggestion: &ImprovementSuggestion) -> Self {
+        let status = match suggestion.status() {
+            SuggestionStatus::Pending => "pending",
+            SuggestionStatus::Accepted => "accepted",
+            SuggestionStatus::Declined => "declined",
+        };
+
+        Self {
+            id: suggestion.id().to_string(),
+            suggested_content: suggestion.suggested_content().to_string(),
+            ai_rationale: suggestion.ai_rationale().to_string(),
+            status: status.to_string(),
+            decline_reason: suggestion.decline_reason().map(|s| s.to_string()),
+            created_at: suggestion.created_at(),
+            resolved_at: suggestion.resolved_at(),
+            resulting_version_id: suggestion.resulting_version_id().map(|id| id.to_string()),
         }
     }
 }
