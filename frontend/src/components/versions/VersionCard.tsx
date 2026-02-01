@@ -22,6 +22,10 @@ export function VersionCard({
   onAddTag,
   onDeleteTag,
 }: VersionCardProps) {
+  const pendingSuggestions =
+    version.improvement_suggestions?.filter((s) => s.status === "pending")
+      .length || 0;
+
   const handleDeleteTag = (tagName: string) => {
     if (confirm(`Remove tag "${tagName}" from this version?`)) {
       onDeleteTag(tagName);
@@ -36,6 +40,11 @@ export function VersionCard({
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="outline">v{version.version}</Badge>
+          {pendingSuggestions > 0 && (
+            <Badge variant="default" className="bg-primary">
+              {pendingSuggestions} pending
+            </Badge>
+          )}
           {tags.map((tag) => (
             <Badge
               key={tag}

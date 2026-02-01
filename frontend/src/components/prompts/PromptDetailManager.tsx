@@ -7,6 +7,7 @@ import {
 import { useCreateVersion, useDeleteVersion } from "@/api/hooks/versions";
 import { useTagVersion, useDeleteTag } from "@/api/hooks/tags";
 import { useSubmitFeedback, useDeleteFeedback } from "@/api/hooks/feedback";
+import { useAnalyzeFeedback } from "@/api/hooks/improvements";
 import { PromptDetailDisplay } from "./PromptDetailDisplay";
 import type {
   UpdatePromptRequest,
@@ -24,6 +25,9 @@ export function PromptDetailManager() {
     versionId: string;
     feedbackId: string;
   } | null>(null);
+  const [analyzingVersionId, setAnalyzingVersionId] = useState<string | null>(
+    null,
+  );
 
   const { data: prompt, isLoading, error } = useGetPrompt(promptId);
   const updatePrompt = useUpdatePrompt(promptId);
@@ -36,6 +40,10 @@ export function PromptDetailManager() {
   const deleteFeedbackMutation = useDeleteFeedback(
     promptId,
     deletingFeedback?.versionId || "",
+  );
+  const analyzeFeedback = useAnalyzeFeedback(
+    promptId,
+    analyzingVersionId || "",
   );
 
   const versionFeedback = useMemo(() => {
@@ -85,6 +93,12 @@ export function PromptDetailManager() {
     setDeletingFeedback(null);
   };
 
+  const handleAnalyzeFeedback = async (versionId: string) => {
+    setAnalyzingVersionId(versionId);
+    await analyzeFeedback.mutateAsync();
+    setAnalyzingVersionId(null);
+  };
+
   const handleBack = () => {
     navigate({ to: "/prompts" });
   };
@@ -102,12 +116,15 @@ export function PromptDetailManager() {
       onDeleteTag={handleDeleteTag}
       onSubmitFeedback={handleSubmitFeedback}
       onDeleteFeedback={handleDeleteFeedback}
+      onAnalyzeFeedback={handleAnalyzeFeedback}
       onBack={handleBack}
       isUpdating={updatePrompt.isPending}
       isDeleting={deletePrompt.isPending}
       isCreatingVersion={createVersion.isPending}
       isTagging={tagVersion.isPending}
       isSubmittingFeedback={submitFeedback.isPending}
+      isAnalyzing={analyzeFeedback.isPending}
+      analyzingVersionId={analyzingVersionId}
       versionFeedback={versionFeedback}
     />
   );

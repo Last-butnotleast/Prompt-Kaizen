@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ArrowLeft, Plus, Tag } from "lucide-react";
+import { ArrowLeft, Plus, Sparkles, Tag } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import supabase from "@/lib/supabase";
@@ -49,6 +49,9 @@ interface PromptDetailDisplayProps {
   isTagging: boolean;
   isSubmittingFeedback: boolean;
   versionFeedback: Record<string, Feedback[]>;
+  onAnalyzeFeedback: (versionId: string) => Promise<void>;
+  isAnalyzing: boolean;
+  analyzingVersionId: string | null;
 }
 
 export function PromptDetailDisplay({
@@ -66,6 +69,9 @@ export function PromptDetailDisplay({
   isTagging,
   isSubmittingFeedback,
   versionFeedback,
+  onAnalyzeFeedback,
+  isAnalyzing,
+  analyzingVersionId,
 }: PromptDetailDisplayProps) {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
@@ -236,14 +242,35 @@ export function PromptDetailDisplay({
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>Versions</CardTitle>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setTagManagementOpen(true)}
-                    >
-                      <Tag className="h-4 w-4 mr-2" />
-                      Manage Tags
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          selectedVersion &&
+                          onAnalyzeFeedback(selectedVersion.id)
+                        }
+                        disabled={
+                          !selectedVersion ||
+                          !selectedVersion.feedback.length ||
+                          isAnalyzing
+                        }
+                      >
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        {isAnalyzing &&
+                        analyzingVersionId === selectedVersion?.id
+                          ? "Analyzing..."
+                          : "Analyze Feedback"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setTagManagementOpen(true)}
+                      >
+                        <Tag className="h-4 w-4 mr-2" />
+                        Manage Tags
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -288,9 +315,10 @@ export function PromptDetailDisplay({
             onOpenChange={setViewDialogOpen}
             version={selectedVersion}
             tags={getVersionTags(selectedVersion.id)}
-            feedback={versionFeedback?.[selectedVersion.id] || []} // Add optional chaining
+            feedback={versionFeedback?.[selectedVersion.id] || []}
             onAddFeedback={handleAddFeedback}
             onDeleteFeedback={handleDeleteFeedback}
+            promptId={prompt!.id}
           />
           <AddTagDialog
             open={addTagDialogOpen}
