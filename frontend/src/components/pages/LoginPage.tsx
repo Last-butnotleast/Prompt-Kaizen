@@ -11,7 +11,7 @@ export function LoginPage() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate({ to: "/dashboard" });
+        navigate({ to: "/prompts" });
       } else {
         setLoading(false);
       }
@@ -21,7 +21,7 @@ export function LoginPage() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
-        navigate({ to: "/dashboard" });
+        navigate({ to: "/prompts" });
       }
     });
 
@@ -33,7 +33,7 @@ export function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: `${window.location.origin}/prompts`,
       },
     });
     if (error) {

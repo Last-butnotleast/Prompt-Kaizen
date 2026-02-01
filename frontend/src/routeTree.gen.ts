@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PromptsIndexRouteImport } from './routes/prompts/index'
 import { Route as PromptsPromptIdRouteImport } from './routes/prompts/$promptId'
@@ -24,11 +23,6 @@ const SettingsRoute = SettingsRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -49,7 +43,6 @@ const PromptsPromptIdRoute = PromptsPromptIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/settings': typeof SettingsRoute
   '/prompts/$promptId': typeof PromptsPromptIdRoute
@@ -57,7 +50,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/settings': typeof SettingsRoute
   '/prompts/$promptId': typeof PromptsPromptIdRoute
@@ -66,7 +58,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/settings': typeof SettingsRoute
   '/prompts/$promptId': typeof PromptsPromptIdRoute
@@ -74,25 +65,12 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/dashboard'
-    | '/login'
-    | '/settings'
-    | '/prompts/$promptId'
-    | '/prompts/'
+  fullPaths: '/' | '/login' | '/settings' | '/prompts/$promptId' | '/prompts/'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/dashboard'
-    | '/login'
-    | '/settings'
-    | '/prompts/$promptId'
-    | '/prompts'
+  to: '/' | '/login' | '/settings' | '/prompts/$promptId' | '/prompts'
   id:
     | '__root__'
     | '/'
-    | '/dashboard'
     | '/login'
     | '/settings'
     | '/prompts/$promptId'
@@ -101,7 +79,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   SettingsRoute: typeof SettingsRoute
   PromptsPromptIdRoute: typeof PromptsPromptIdRoute
@@ -122,13 +99,6 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -157,7 +127,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   SettingsRoute: SettingsRoute,
   PromptsPromptIdRoute: PromptsPromptIdRoute,
