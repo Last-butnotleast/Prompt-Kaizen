@@ -4,6 +4,7 @@ CREATE TABLE prompts (
                          user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
                          name VARCHAR(255) NOT NULL,
                          description TEXT,
+                         prompt_type VARCHAR(20) NOT NULL DEFAULT 'system',
                          created_at TIMESTAMPTZ NOT NULL,
                          updated_at TIMESTAMPTZ NOT NULL
 );
@@ -17,6 +18,8 @@ CREATE TABLE versions (
                           version VARCHAR(50) NOT NULL,
                           digest VARCHAR(255) NOT NULL,
                           content TEXT NOT NULL,
+                          content_type VARCHAR(20) NOT NULL DEFAULT 'static',
+                          variables JSONB,
                           changelog TEXT,
                           created_at TIMESTAMPTZ NOT NULL,
                           UNIQUE(prompt_id, version)
@@ -43,6 +46,9 @@ CREATE TABLE feedbacks (
                            version_id UUID NOT NULL REFERENCES versions(id) ON DELETE CASCADE,
                            rating SMALLINT NOT NULL CHECK (rating >= 1 AND rating <= 5),
                            comment TEXT,
+                           test_input TEXT,
+                           test_actual_output TEXT,
+                           test_expected_output TEXT,
                            created_at TIMESTAMPTZ NOT NULL
 );
 
@@ -60,29 +66,36 @@ CREATE TABLE api_keys (
                           is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
--- Add indexes for performance
 CREATE INDEX idx_api_keys_key_hash ON api_keys(key_hash);
 CREATE INDEX idx_api_keys_user_id ON api_keys(user_id);
 
--- Row Level Security
 ALTER TABLE api_keys ENABLE ROW LEVEL SECURITY;
 
--- Users can only see their own API keys
 CREATE POLICY "Users can view own API keys"
-    ON api_keys FOR SELECT
-                               USING (auth.uid() = user_id);
+    ON api_keys FOR SELECT USING (auth.uid() = user_id);
 
--- Users can create their own API keys
 CREATE POLICY "Users can create own API keys"
-    ON api_keys FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    ON api_keys FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- Users can delete their own API keys
 CREATE POLICY "Users can delete own API keys"
-    ON api_keys FOR DELETE
-USING (auth.uid() = user_id);
+    ON api_keys FOR DELETE USING (auth.uid() = user_id);
 
--- Users can update their own API keys (for is_active, last_used_at)
 CREATE POLICY "Users can update own API keys"
-    ON api_keys FOR UPDATE
-                               USING (auth.uid() = user_id);
+    ON api_keys FOR UPDATE USING (auth.uid() = user_id);
+
+-- Improvement Suggestions table
+CREATE TABLE improvement_suggestions (
+                                         id UUID PRIMARY KEY,
+                                         source_version_id UUID NOT NULL REFERENCES versions(id) ON DELETE CASCADE,
+                                         suggested_content TEXT NOT NULL,
+                                         ai_rationale TEXT NOT NULL,
+                                         status VARCHAR(20) NOT NULL CHECK (status IN ('pending', 'accepted', 'declined')),
+                                         decline_reason TEXT,
+                                         created_at TIMESTAMPTZ NOT NULL,
+                                         resolved_at TIMESTAMPTZ,
+                                         resulting_version_id UUID REFERENCES versions(id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_improvement_suggestions_source_version ON improvement_suggestions(source_version_id);
+CREATE INDEX idx_improvement_suggestions_status ON improvement_suggestions(status);
+CREATE INDEX idx_improvement_suggestions_resulting_version ON improvement_suggestions(resulting_version_id);

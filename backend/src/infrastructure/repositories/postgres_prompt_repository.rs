@@ -16,8 +16,7 @@ impl PostgresPromptRepository {
     async fn fetch_versions(&self, prompt_id: Uuid) -> Result<Vec<PromptVersion>, String> {
         let rows = sqlx::query(
             "SELECT id, prompt_id, version, digest, content, content_type, variables, changelog, created_at
-             FROM versions WHERE prompt_id = $1 ORDER BY created_at"
-        )
+             FROM versions WHERE prompt_id = $1 ORDER BY created_at"        )
             .bind(prompt_id)
             .fetch_all(&self.pool)
             .await
@@ -77,8 +76,7 @@ impl PostgresPromptRepository {
     async fn fetch_tags(&self, prompt_id: Uuid) -> Result<Vec<Tag>, String> {
         let rows = sqlx::query(
             "SELECT id, prompt_id, version_id, name, updated_at
-             FROM tags WHERE prompt_id = $1"
-        )
+             FROM tags WHERE prompt_id = $1"        )
             .bind(prompt_id)
             .fetch_all(&self.pool)
             .await
@@ -103,8 +101,7 @@ impl PostgresPromptRepository {
     async fn fetch_feedbacks(&self, version_id: Uuid) -> Result<Vec<Feedback>, String> {
         let rows = sqlx::query(
             "SELECT id, version_id, rating, comment, test_input, test_actual_output, test_expected_output, created_at
-             FROM feedbacks WHERE version_id = $1 ORDER BY created_at"
-        )
+             FROM feedbacks WHERE version_id = $1 ORDER BY created_at"        )
             .bind(version_id)
             .fetch_all(&self.pool)
             .await
@@ -140,8 +137,7 @@ impl PostgresPromptRepository {
     async fn fetch_improvement_suggestions(&self, version_id: Uuid) -> Result<Vec<ImprovementSuggestion>, String> {
         let rows = sqlx::query(
             "SELECT id, source_version_id, suggested_content, ai_rationale, status, decline_reason, created_at, resolved_at, resulting_version_id
-         FROM improvement_suggestions WHERE source_version_id = $1 ORDER BY created_at"
-        )
+         FROM improvement_suggestions WHERE source_version_id = $1 ORDER BY created_at"        )
             .bind(version_id)
             .fetch_all(&self.pool)
             .await
@@ -194,6 +190,7 @@ impl PostgresPromptRepository {
             .await
             .map_err(|e| format!("Failed to delete versions: {}", e))?;
 
+        // STEP 1: Save ALL versions first
         for version in versions {
             let content_type_str = match version.content_type() {
                 ContentType::Static => "static",
@@ -204,8 +201,7 @@ impl PostgresPromptRepository {
 
             sqlx::query(
                 "INSERT INTO versions (id, prompt_id, version, digest, content, content_type, variables, changelog, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
-            )
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"            )
                 .bind(version.id())
                 .bind(version.prompt_id())
                 .bind(version.version_string())
@@ -218,10 +214,18 @@ impl PostgresPromptRepository {
                 .execute(&self.pool)
                 .await
                 .map_err(|e| format!("Failed to save version: {}", e))?;
+        }
 
+        // STEP 2: Save all feedbacks (now versions exist)
+        for version in versions {
             self.save_feedbacks(version.id(), version.feedbacks()).await?;
+        }
+
+        // STEP 3: Save all improvement suggestions (now ALL versions exist, including resulting_version_id)
+        for version in versions {
             self.save_improvement_suggestions(version.id(), version.improvement_suggestions()).await?;
         }
+
         Ok(())
     }
 
@@ -235,8 +239,7 @@ impl PostgresPromptRepository {
         for tag in tags {
             sqlx::query(
                 "INSERT INTO tags (id, prompt_id, version_id, name, updated_at)
-             VALUES ($1, $2, $3, $4, $5)"
-            )
+             VALUES ($1, $2, $3, $4, $5)"            )
                 .bind(tag.id())
                 .bind(tag.prompt_id())
                 .bind(tag.version_id())
@@ -270,8 +273,7 @@ impl PostgresPromptRepository {
 
             sqlx::query(
                 "INSERT INTO feedbacks (id, version_id, rating, comment, test_input, test_actual_output, test_expected_output, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
-            )
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"            )
                 .bind(feedback.id())
                 .bind(version_id)
                 .bind(feedback.rating() as i16)
@@ -303,8 +305,7 @@ impl PostgresPromptRepository {
 
             sqlx::query(
                 "INSERT INTO improvement_suggestions (id, source_version_id, suggested_content, ai_rationale, status, decline_reason, created_at, resolved_at, resulting_version_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
-            )
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"            )
                 .bind(suggestion.id())
                 .bind(suggestion.source_version_id())
                 .bind(suggestion.suggested_content())
@@ -365,13 +366,7 @@ impl PromptRepository for PostgresPromptRepository {
 
         sqlx::query(
             "INSERT INTO prompts (id, user_id, name, description, prompt_type, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-         ON CONFLICT (id) DO UPDATE SET
-         name = EXCLUDED.name,
-         description = EXCLUDED.description,
-         prompt_type = EXCLUDED.prompt_type,
-         updated_at = EXCLUDED.updated_at"
-        )
+         VALUES ($1, $2, $3, $4, $5, $6, $7)         ON CONFLICT (id) DO UPDATE SET         name = EXCLUDED.name,         description = EXCLUDED.description,         prompt_type = EXCLUDED.prompt_type,         updated_at = EXCLUDED.updated_at"        )
             .bind(prompt.id())
             .bind(prompt.user_id())
             .bind(prompt.name())
@@ -392,8 +387,7 @@ impl PromptRepository for PostgresPromptRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Prompt>, String> {
         let row = sqlx::query(
             "SELECT id, user_id, name, description, prompt_type, created_at, updated_at
-             FROM prompts WHERE id = $1"
-        )
+             FROM prompts WHERE id = $1"        )
             .bind(id)
             .fetch_optional(&self.pool)
             .await
@@ -408,8 +402,7 @@ impl PromptRepository for PostgresPromptRepository {
     async fn find_by_id_and_user(&self, id: Uuid, user_id: Uuid) -> Result<Option<Prompt>, String> {
         let row = sqlx::query(
             "SELECT id, user_id, name, description, prompt_type, created_at, updated_at
-             FROM prompts WHERE id = $1 AND user_id = $2"
-        )
+             FROM prompts WHERE id = $1 AND user_id = $2"        )
             .bind(id)
             .bind(user_id)
             .fetch_optional(&self.pool)
@@ -425,8 +418,7 @@ impl PromptRepository for PostgresPromptRepository {
     async fn find_all(&self) -> Result<Vec<Prompt>, String> {
         let rows = sqlx::query(
             "SELECT id, user_id, name, description, prompt_type, created_at, updated_at
-             FROM prompts ORDER BY created_at DESC"
-        )
+             FROM prompts ORDER BY created_at DESC"        )
             .fetch_all(&self.pool)
             .await
             .map_err(|e| format!("Failed to fetch prompts: {}", e))?;
@@ -442,8 +434,7 @@ impl PromptRepository for PostgresPromptRepository {
     async fn find_by_user(&self, user_id: Uuid) -> Result<Vec<Prompt>, String> {
         let rows = sqlx::query(
             "SELECT id, user_id, name, description, prompt_type, created_at, updated_at
-             FROM prompts WHERE user_id = $1 ORDER BY created_at DESC"
-        )
+             FROM prompts WHERE user_id = $1 ORDER BY created_at DESC"        )
             .bind(user_id)
             .fetch_all(&self.pool)
             .await
@@ -460,11 +451,7 @@ impl PromptRepository for PostgresPromptRepository {
     async fn find_by_tag(&self, tag_name: &str) -> Result<Vec<Prompt>, String> {
         let rows = sqlx::query(
             "SELECT DISTINCT p.id, p.user_id, p.name, p.description, p.prompt_type, p.created_at, p.updated_at
-             FROM prompts p
-             INNER JOIN tags t ON p.id = t.prompt_id
-             WHERE t.name = $1
-             ORDER BY p.created_at DESC"
-        )
+             FROM prompts p             INNER JOIN tags t ON p.id = t.prompt_id             WHERE t.name = $1             ORDER BY p.created_at DESC"        )
             .bind(tag_name)
             .fetch_all(&self.pool)
             .await
